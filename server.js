@@ -1,4 +1,4 @@
-// --- DATABASE (IndexedDB) FOR OFFLINE STORAGE ---
+// --- DATABASE (IndexedDB) ---
 let db;
 const request = indexedDB.open("SkyMusicDB", 1);
 let downloadedURLs = JSON.parse(localStorage.getItem('downloadedURLs')) || [];
@@ -8,7 +8,10 @@ request.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("offlineAudio")) db.createObjectStore("offlineAudio");
 };
-request.onsuccess = (e) => db = e.target.result;
+request.onsuccess = (e) => {
+    db = e.target.result;
+    renderLibrary(); // Initial render once DB is ready
+};
 
 function saveSongOffline(url, blob) {
     const transaction = db.transaction(["offlineAudio"], "readwrite");
@@ -32,7 +35,7 @@ function getOfflineSong(url) {
     });
 }
 
-// --- DATA AND STATE ---
+// --- DATA & STATE ---
 let songs = JSON.parse(localStorage.getItem('songs')) || [
     {title:"Dream Waves",artist:"Sky Artist",cover:"https://picsum.photos/200?1",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
     {title:"Cloud Drift",artist:"BlueTone",cover:"https://picsum.photos/200?2",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"}
@@ -40,10 +43,11 @@ let songs = JSON.parse(localStorage.getItem('songs')) || [
 
 let audio = new Audio();
 let currentSong = 0;
+let isLooping = false;
 let currentObjectURL = null;
 let activeContextIndex = -1;
 
-// --- UI RENDERING ---
+// --- RENDERING ---
 function loadSongs() {
     const grid = document.getElementById("songGrid");
     if (!grid) return;
@@ -70,7 +74,9 @@ function renderLibrary() {
         likedGrid.innerHTML = likedSongs.length ? "" : "<p style='color:gray'>No liked songs yet.</p>";
         likedSongs.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
-            likedGrid.innerHTML += `<div class="card" onclick="playSong(${idx})">
+            likedGrid.innerHTML += `
+            <div class="card" onclick="playSong(${idx})" oncontextmenu="openContextMenu(event, ${idx})">
+                <div class="like" onclick="toggleLike(event,${idx})">💙</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
             </div>`;
@@ -78,11 +84,14 @@ function renderLibrary() {
     }
 
     if (downloadedGrid) {
-        const offlineSongs = songs.filter(s => downloadedURLs.includes(s.file) || s.file.startsWith("local_"));
-        downloadedGrid.innerHTML = offlineSongs.length ? "" : "<p style='color:gray'>No downloads yet.</p>";
-        offlineSongs.forEach((song) => {
+        const offline = songs.filter(s => downloadedURLs.includes(s.file) || s.file.startsWith("local_"));
+        downloadedGrid.innerHTML = offline.length ? "" : "<p style='color:gray'>No downloaded songs yet.</p>";
+        offline.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
-            downloadedGrid.innerHTML += `<div class="card" onclick="playSong(${idx})">
+            const isLiked = likedSongs.some(ls => ls.file === song.file);
+            downloadedGrid.innerHTML += `
+            <div class="card" onclick="playSong(${idx})" oncontextmenu="openContextMenu(event, ${idx})">
+                <div class="like" onclick="toggleLike(event,${idx})">${isLiked ? "💙" : "🤍"}</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
             </div>`;
@@ -90,7 +99,7 @@ function renderLibrary() {
     }
 }
 
-// --- CORE ACTIONS ---
+// --- ACTIONS ---
 async function playSong(index) {
     currentSong = index;
     const song = songs[index];
@@ -102,6 +111,7 @@ async function playSong(index) {
     if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
     
     audio.src = blob ? (currentObjectURL = URL.createObjectURL(blob)) : song.file;
+    audio.loop = isLooping;
     audio.play().then(() => {
         document.getElementById("playerTitle").innerText = song.title;
         document.getElementById("playerArtist").innerText = song.artist;
@@ -113,13 +123,19 @@ async function playSong(index) {
 function toggleLike(e, index) {
     if (e) e.stopPropagation();
     const song = songs[index];
-    const idx = likedSongs.findIndex(s => s.file === song.file);
-    if (idx === -1) likedSongs.push(song);
-    else likedSongs.splice(idx, 1);
+    const exists = likedSongs.findIndex(s => s.file === song.file);
+    if (exists === -1) likedSongs.push(song);
+    else likedSongs.splice(exists, 1);
     
     localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
     loadSongs();
     renderLibrary();
+}
+
+function toggleLoop() {
+    isLooping = !isLooping;
+    audio.loop = isLooping;
+    document.getElementById("loopBtn").classList.toggle("loop-active", isLooping);
 }
 
 async function triggerOfflineSave(url) {
@@ -172,21 +188,17 @@ function handleCmEdit() {
 }
 
 function handleCmDelete() {
-    if (confirm("Delete this song permanently?")) {
+    if (confirm("Delete this song?")) {
         const song = songs[activeContextIndex];
         songs.splice(activeContextIndex, 1);
-        likedSongs = likedSongs.filter(s => s.file !== song.file);
-        downloadedURLs = downloadedURLs.filter(u => u !== song.file);
-        
+        likedSongs = likedSongs.filter(ls => ls.file !== song.file);
+        downloadedURLs = downloadedURLs.filter(url => url !== song.file);
         localStorage.setItem('songs', JSON.stringify(songs));
         localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
-        
         const store = db.transaction(["offlineAudio"], "readwrite").objectStore("offlineAudio");
         store.delete(song.file);
-        
-        loadSongs();
-        renderLibrary();
+        loadSongs(); renderLibrary();
     }
 }
 
@@ -195,31 +207,24 @@ function saveEditedSong() {
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
     localStorage.setItem('songs', JSON.stringify(songs));
-    loadSongs();
-    renderLibrary();
-    closeEditModal();
+    loadSongs(); renderLibrary(); closeEditModal();
 }
 
 // --- HELPERS ---
 function addSong() {
     const name = document.getElementById("songName").value;
-    const artist = document.getElementById("artistName").value || "Unknown";
-    const cover = document.getElementById("coverURL").value || "https://picsum.photos/200";
     const url = document.getElementById("songURL").value;
     const fileInput = document.getElementById("localAudio").files[0];
-
     if (!name) return alert("Name required");
 
-    let finalFile = url;
+    let final = url;
     if (fileInput) {
-        finalFile = "local_" + Date.now();
-        saveSongOffline(finalFile, fileInput);
+        final = "local_" + Date.now();
+        saveSongOffline(final, fileInput);
     }
-
-    songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
+    songs.push({ title: name, artist: document.getElementById("artistName").value, cover: document.getElementById("coverURL").value || "https://picsum.photos/200", file: final });
     localStorage.setItem('songs', JSON.stringify(songs));
-    loadSongs();
-    alert("Song added!");
+    loadSongs(); alert("Added!");
 }
 
 function showSection(id) { 
@@ -230,16 +235,22 @@ function showSection(id) {
 
 function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
 function nextSong() { playSong((currentSong + 1) % songs.length); }
+function prevSong() { playSong((currentSong - 1 + songs.length) % songs.length); }
 function closePlayer() { document.getElementById("player").style.display="none"; audio.pause(); }
 function shrinkPlayer() { document.getElementById("player").classList.remove("fullscreen"); }
 function expandPlayer() { document.getElementById("player").classList.add("fullscreen"); }
 function closeEditModal() { document.getElementById("editModal").style.display="none"; }
-function scrub(e) { audio.currentTime = (e.offsetX / e.target.offsetWidth) * audio.duration; }
+function downloadCurrentSong() { triggerOfflineSave(songs[currentSong].file); }
+function scrub(e) { 
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = percent * audio.duration;
+}
 
 audio.addEventListener('timeupdate', () => {
     const bar = document.getElementById("progressBar");
     if (bar && audio.duration) bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
 });
 
-// Initialize
+// INITIAL START
 loadSongs();
