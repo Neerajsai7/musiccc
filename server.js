@@ -2,6 +2,8 @@
 let db;
 const request = indexedDB.open("SkyMusicDB", 1);
 let downloadedURLs = JSON.parse(localStorage.getItem('downloadedURLs')) || [];
+// Save liked songs to localStorage so they stay saved
+let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
 
 request.onupgradeneeded = (e) => {
     db = e.target.result;
@@ -17,7 +19,7 @@ function saveSongOffline(url, blob, silent = false) {
         if (!downloadedURLs.includes(url)) {
             downloadedURLs.push(url);
             localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
-            renderLibrary();
+            renderLibrary(); // Refresh the download section
         }
         if (!silent) alert("Saved offline!");
     };
@@ -37,7 +39,7 @@ let songs = JSON.parse(localStorage.getItem('songs')) || [
     {title:"Dream Waves",artist:"Sky Artist",cover:"https://picsum.photos/200?1",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
     {title:"Cloud Drift",artist:"BlueTone",cover:"https://picsum.photos/200?2",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"}
 ];
-let likedSongs = [];
+
 let audio = new Audio();
 let currentSong = 0;
 let isLooping = false;
@@ -46,19 +48,79 @@ let currentObjectURL = null;
 // --- UI RENDERING ---
 function loadSongs() {
     let grid = document.getElementById("songGrid");
+    if (!grid) return;
     grid.innerHTML = "";
     songs.forEach((song, index) => {
-        let liked = likedSongs.includes(song);
+        // Check if the song's file URL is in the likedSongs array
+        let isLiked = likedSongs.some(s => s.file === song.file);
         grid.innerHTML += `
-        <div class="card" onclick="playSong(${index})" oncontextmenu="openContextMenu(event, ${index})">
-            <div class="like" onclick="toggleLike(event,${index})">${liked ? "💙" : "🤍"}</div>
-            <div class="cover" style="background-image:url('${song.cover}')"></div>
-            <div class="title">${song.title}</div>
-            <div class="artist">${song.artist}</div>
+        <div class="card" oncontextmenu="openContextMenu(event, ${index})">
+            <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
+            <div onclick="playSong(${index})">
+                <div class="cover" style="background-image:url('${song.cover}')"></div>
+                <div class="title">${song.title}</div>
+                <div class="artist">${song.artist}</div>
+            </div>
         </div>`;
     });
 }
+
+// FIX: Added missing toggleLike function
+function toggleLike(event, index) {
+    if (event) event.stopPropagation();
+    let song = songs[index];
+    let alreadyLikedIndex = likedSongs.findIndex(s => s.file === song.file);
+
+    if (alreadyLikedIndex === -1) {
+        likedSongs.push(song);
+    } else {
+        likedSongs.splice(alreadyLikedIndex, 1);
+    }
+
+    localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+    loadSongs();
+    renderLibrary();
+}
+
+// FIX: Added missing renderLibrary function to show Downloads and Likes
+function renderLibrary() {
+    let likedGrid = document.getElementById("likedSongsGrid");
+    let downloadedGrid = document.getElementById("downloadedSongsGrid");
+
+    if (likedGrid) {
+        likedGrid.innerHTML = likedSongs.length ? "" : "<p style='color:gray'>No liked songs yet.</p>";
+        likedSongs.forEach((song) => {
+            let indexInMain = songs.findIndex(s => s.file === song.file);
+            likedGrid.innerHTML += `
+            <div class="card" onclick="playSong(${indexInMain})">
+                <div class="like" onclick="toggleLike(event,${indexInMain})">💙</div>
+                <div class="cover" style="background-image:url('${song.cover}')"></div>
+                <div class="title">${song.title}</div>
+                <div class="artist">${song.artist}</div>
+            </div>`;
+        });
+    }
+
+    if (downloadedGrid) {
+        let offlineSongs = songs.filter(s => downloadedURLs.includes(s.file));
+        downloadedGrid.innerHTML = offlineSongs.length ? "" : "<p style='color:gray'>No downloaded songs yet.</p>";
+        offlineSongs.forEach((song) => {
+            let indexInMain = songs.findIndex(s => s.file === song.file);
+            let isLiked = likedSongs.some(s => s.file === song.file);
+            downloadedGrid.innerHTML += `
+            <div class="card" onclick="playSong(${indexInMain})">
+                <div class="like" onclick="toggleLike(event,${indexInMain})">${isLiked ? "💙" : "🤍"}</div>
+                <div class="cover" style="background-image:url('${song.cover}')"></div>
+                <div class="title">${song.title}</div>
+                <div class="artist">${song.artist}</div>
+            </div>`;
+        });
+    }
+}
+
+// Initialize
 loadSongs();
+renderLibrary();
 
 async function playSong(index) {
     currentSong = index;
@@ -90,8 +152,7 @@ async function triggerOfflineSave(url) {
         toast.classList.remove("hidden");
         toastText.innerText = "Connecting...";
         
-        // Try direct fetch first (works for Catbox often)
-        let response = await fetch(url).catch(() => null);
+        let response = await fetch(url, { mode: 'cors' }).catch(() => null);
         
         if (!response || !response.ok) {
             toastText.innerText = "Using Proxy...";
@@ -104,14 +165,13 @@ async function triggerOfflineSave(url) {
         const blob = await response.blob();
         saveSongOffline(url, blob, true);
         
-        spinner.style.display = "none";
+        if (spinner) spinner.style.display = "none";
         toastText.innerText = "✅ Done!";
         setTimeout(() => toast.classList.add("hidden"), 2000);
 
     } catch (error) {
-        spinner.style.display = "none";
+        if (spinner) spinner.style.display = "none";
         toastText.innerText = "❌ Blocked. Opening Link...";
-        // FALLBACK: Open link in new tab so user can manually download
         setTimeout(() => {
             toast.classList.add("hidden");
             window.open(url, '_blank');
@@ -129,7 +189,10 @@ function openContextMenu(event, index) {
     menu.style.left = event.pageX + "px";
     menu.style.top = event.pageY + "px";
 }
-document.addEventListener("click", () => document.getElementById("contextMenu").style.display = "none");
+document.addEventListener("click", () => {
+    let menu = document.getElementById("contextMenu");
+    if(menu) menu.style.display = "none";
+});
 
 function handleCmEdit() {
     let song = songs[activeContextIndex];
@@ -145,14 +208,18 @@ function saveEditedSong() {
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
     localStorage.setItem('songs', JSON.stringify(songs));
     loadSongs();
+    renderLibrary();
     document.getElementById("editModal").style.display = "none";
 }
 
-// Helper functions (required)
+// --- HELPERS ---
 function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
 function nextSong() { playSong((currentSong + 1) % songs.length); }
 function prevSong() { playSong((currentSong - 1 + songs.length) % songs.length); }
-function formatTime(s) { return Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,'0'); }
+function formatTime(s) { 
+    if(isNaN(s)) return "0:00";
+    return Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,'0'); 
+}
 function showSection(id) { 
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -163,7 +230,11 @@ function shrinkPlayer() { document.getElementById("player").classList.remove("fu
 function expandPlayer() { document.getElementById("player").classList.add("fullscreen"); }
 function handleCmDownload() { triggerOfflineSave(songs[activeContextIndex].file); }
 function closeEditModal() { document.getElementById("editModal").style.display="none"; }
+function downloadCurrentSong() { triggerOfflineSave(songs[currentSong].file); }
 
 audio.addEventListener('timeupdate', () => {
-    document.getElementById("progressBar").style.width = (audio.currentTime/audio.duration)*100 + "%";
+    const bar = document.getElementById("progressBar");
+    if(bar && audio.duration) {
+        bar.style.width = (audio.currentTime/audio.duration)*100 + "%";
+    }
 });
