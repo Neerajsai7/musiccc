@@ -19,6 +19,7 @@ request.onerror = function(event) {
     console.error("Database error: " + event.target.errorCode);
 };
 
+// Updated to remove the default alert entirely
 function saveSongOffline(url, blob, silent = false) {
     const transaction = db.transaction(["offlineAudio"], "readwrite");
     const store = transaction.objectStore("offlineAudio");
@@ -29,7 +30,9 @@ function saveSongOffline(url, blob, silent = false) {
             localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
             renderLibrary(); 
         }
-        if (!silent) alert("Song saved offline successfully! You can find it in your Library.");
+        // If it's a local file upload from the "Add" tab, alert them it worked.
+        // Otherwise, let the Toast animation handle the success message!
+        if (!silent) alert("Song saved offline successfully! Find it in your Library.");
     };
     transaction.onerror = () => {
         if (!silent) alert("Failed to save song to database.");
@@ -101,11 +104,8 @@ async function playSong(index) {
     }
 
     if (offlineBlob) {
-        console.log("Playing offline version from database!");
         currentObjectURL = URL.createObjectURL(offlineBlob);
         audioSource = currentObjectURL;
-    } else {
-        console.log("Streaming from internet...");
     }
 
     audio.src = audioSource;
@@ -227,20 +227,48 @@ async function downloadCurrentSong(event) {
     triggerOfflineSave(song.file);
 }
 
+// ==========================================
+// --- NEW ANIMATED DOWNLOAD LOGIC ----------
+// ==========================================
 async function triggerOfflineSave(url) {
+    const toast = document.getElementById("downloadToast");
+    const toastText = document.getElementById("toastText");
+    const spinner = document.getElementById("toastSpinner");
+
     try {
-        alert("Downloading song to app... please wait.");
+        // 1. Show the beautiful downloading animation
+        toast.classList.remove("hidden");
+        toastText.innerText = "Downloading...";
+        spinner.style.display = "block";
         
-        let fetchUrl = url.startsWith("http") ? "https://corsproxy.io/?" + encodeURIComponent(url) : url;
+        // 2. Try the new, more aggressive proxy
+        let fetchUrl = url.startsWith("http") ? "https://api.allorigins.win/raw?url=" + encodeURIComponent(url) : url;
         
         const response = await fetch(fetchUrl);
         if (!response.ok) throw new Error("Network response was not ok");
         const blob = await response.blob();
         
-        saveSongOffline(url, blob);
+        // 3. Save it silently (true means no ugly alert box)
+        saveSongOffline(url, blob, true);
+        
+        // 4. Show success in the toast, then hide it after 3 seconds
+        spinner.style.display = "none";
+        toastText.innerText = "✅ Download Complete!";
+        
+        setTimeout(() => {
+            toast.classList.add("hidden");
+        }, 3000);
+
     } catch (error) {
         console.warn("Proxy/CORS Blocked Download:", error);
-        alert("The server blocked the download, and the proxy couldn't bypass it. Please use the 'Upload MP3' option in the Add tab instead!");
+        
+        // 5. Show failure in the toast, then hide it
+        spinner.style.display = "none";
+        toastText.innerText = "❌ Download Blocked by Server";
+        
+        setTimeout(() => {
+            toast.classList.add("hidden");
+        }, 4000);
     }
 }
 
@@ -285,7 +313,7 @@ function addSong() {
 
     if (fileInput) {
         finalUrl = "local_" + Date.now(); 
-        saveSongOffline(finalUrl, fileInput, true); 
+        saveSongOffline(finalUrl, fileInput, false); // Keep alert for local upload success
     } else if (urlInput) {
         finalUrl = urlInput;
     } else {
@@ -309,7 +337,8 @@ function addSong() {
     document.getElementById("localAudio").value = "";
 
     loadSongs();
-    alert("Song Added Successfully!");
+    
+    if(!fileInput) alert("Song Added Successfully!");
 }
 
 // --- NAVIGATION ---
@@ -371,21 +400,16 @@ document.addEventListener("keydown", function(event) {
 
 audio.addEventListener('ended', nextSong);
 
-// --- CLOSE PLAYER ---
 function closePlayer(event) {
     if(event) event.stopPropagation(); 
     document.getElementById("player").style.display = "none";
     audio.pause();
 }
 
-// ==========================================
-// --- NEW CONTEXT MENU & EDIT LOGIC --------
-// ==========================================
-
 let activeContextIndex = -1;
 
 function openContextMenu(event, index) {
-    event.preventDefault(); // Stop normal browser right-click menu
+    event.preventDefault(); 
     
     activeContextIndex = index;
     let song = songs[index];
@@ -394,7 +418,6 @@ function openContextMenu(event, index) {
     let menu = document.getElementById("contextMenu");
     let downloadBtn = document.getElementById("cmDownloadBtn");
     
-    // Change download option if it's already downloaded
     if (isDownloaded) {
         downloadBtn.innerText = "✅ Downloaded";
         downloadBtn.classList.add("disabled");
@@ -403,13 +426,11 @@ function openContextMenu(event, index) {
         downloadBtn.classList.remove("disabled");
     }
     
-    // Position the menu where the mouse clicked
     menu.style.display = "block";
     menu.style.left = event.pageX + "px";
     menu.style.top = event.pageY + "px";
 }
 
-// Hide menu if user clicks anywhere else
 document.addEventListener("click", function() {
     document.getElementById("contextMenu").style.display = "none";
 });
@@ -426,12 +447,10 @@ function handleCmDownload() {
 function handleCmEdit() {
     let song = songs[activeContextIndex];
     
-    // Pre-fill the inputs with the song's current info
     document.getElementById("editTitleInput").value = song.title;
     document.getElementById("editArtistInput").value = song.artist;
     document.getElementById("editCoverInput").value = song.cover;
     
-    // Show the modal overlay
     document.getElementById("editModal").style.display = "flex";
 }
 
@@ -443,7 +462,6 @@ function closeEditModal() {
 function saveEditedSong() {
     if (activeContextIndex === -1) return;
     
-    // Get the new values typed by the user
     let newTitle = document.getElementById("editTitleInput").value;
     let newArtist = document.getElementById("editArtistInput").value;
     let newCover = document.getElementById("editCoverInput").value;
@@ -453,28 +471,23 @@ function saveEditedSong() {
         return;
     }
 
-    // Update the song in our array
     songs[activeContextIndex].title = newTitle;
     songs[activeContextIndex].artist = newArtist || "Unknown Artist";
     if (newCover) {
         songs[activeContextIndex].cover = newCover;
     }
     
-    // Save to local storage so it stays permanently
     localStorage.setItem('songs', JSON.stringify(songs));
     
-    // Update the currently playing UI if we just edited the active song
     if (activeContextIndex === currentSong) {
         document.getElementById("playerTitle").innerText = songs[activeContextIndex].title;
         document.getElementById("playerArtist").innerText = songs[activeContextIndex].artist;
         document.getElementById("playerCover").src = songs[activeContextIndex].cover;
     }
 
-    // Refresh everything visually
     loadSongs();
     renderLibrary();
     searchSongs();
     
-    // Close the popup
     closeEditModal();
 }
