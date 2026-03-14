@@ -1,4 +1,4 @@
-// --- DATABASE ---
+// --- DATABASE (IndexedDB) FOR OFFLINE STORAGE ---
 let db;
 const request = indexedDB.open("SkyMusicDB", 1);
 let downloadedURLs = JSON.parse(localStorage.getItem('downloadedURLs')) || [];
@@ -10,7 +10,7 @@ request.onupgradeneeded = (e) => {
 };
 request.onsuccess = (e) => db = e.target.result;
 
-function saveSongOffline(url, blob, silent = false) {
+function saveSongOffline(url, blob) {
     const transaction = db.transaction(["offlineAudio"], "readwrite");
     const store = transaction.objectStore("offlineAudio");
     store.put(blob, url);
@@ -26,13 +26,13 @@ function saveSongOffline(url, blob, silent = false) {
 function getOfflineSong(url) {
     return new Promise((resolve) => {
         if (!db) return resolve(null);
-        const request = db.transaction(["offlineAudio"], "readonly").objectStore("offlineAudio").get(url);
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => resolve(null);
+        const req = db.transaction(["offlineAudio"], "readonly").objectStore("offlineAudio").get(url);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
     });
 }
 
-// --- DATA ---
+// --- DATA AND STATE ---
 let songs = JSON.parse(localStorage.getItem('songs')) || [
     {title:"Dream Waves",artist:"Sky Artist",cover:"https://picsum.photos/200?1",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
     {title:"Cloud Drift",artist:"BlueTone",cover:"https://picsum.photos/200?2",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"}
@@ -43,16 +43,16 @@ let currentSong = 0;
 let currentObjectURL = null;
 let activeContextIndex = -1;
 
-// --- RENDERING ---
+// --- UI RENDERING ---
 function loadSongs() {
     const grid = document.getElementById("songGrid");
-    if(!grid) return;
+    if (!grid) return;
     grid.innerHTML = "";
     songs.forEach((song, index) => {
         const isLiked = likedSongs.some(s => s.file === song.file);
         grid.innerHTML += `
         <div class="card" oncontextmenu="openContextMenu(event, ${index})">
-            <div class="like" onclick="toggleLike(event, ${index})">${isLiked ? "💙" : "🤍"}</div>
+            <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
             <div onclick="playSong(${index})">
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -66,22 +66,21 @@ function renderLibrary() {
     const likedGrid = document.getElementById("likedSongsGrid");
     const downloadedGrid = document.getElementById("downloadedSongsGrid");
 
-    if(likedGrid) {
-        likedGrid.innerHTML = likedSongs.length ? "" : "<p style='color:gray'>No likes yet.</p>";
-        likedSongs.forEach(song => {
+    if (likedGrid) {
+        likedGrid.innerHTML = likedSongs.length ? "" : "<p style='color:gray'>No liked songs yet.</p>";
+        likedSongs.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
             likedGrid.innerHTML += `<div class="card" onclick="playSong(${idx})">
-                <div class="like" onclick="toggleLike(event, ${idx})">💙</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
             </div>`;
         });
     }
 
-    if(downloadedGrid) {
-        const offline = songs.filter(s => downloadedURLs.includes(s.file) || s.file.startsWith("local_"));
-        downloadedGrid.innerHTML = offline.length ? "" : "<p style='color:gray'>No downloads yet.</p>";
-        offline.forEach(song => {
+    if (downloadedGrid) {
+        const offlineSongs = songs.filter(s => downloadedURLs.includes(s.file) || s.file.startsWith("local_"));
+        downloadedGrid.innerHTML = offlineSongs.length ? "" : "<p style='color:gray'>No downloads yet.</p>";
+        offlineSongs.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
             downloadedGrid.innerHTML += `<div class="card" onclick="playSong(${idx})">
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
@@ -91,7 +90,7 @@ function renderLibrary() {
     }
 }
 
-// --- ACTIONS ---
+// --- CORE ACTIONS ---
 async function playSong(index) {
     currentSong = index;
     const song = songs[index];
@@ -100,23 +99,23 @@ async function playSong(index) {
     document.getElementById("playerTitle").innerText = "Loading...";
     
     const blob = await getOfflineSong(song.file);
-    if(currentObjectURL) URL.revokeObjectURL(currentObjectURL);
+    if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
     
     audio.src = blob ? (currentObjectURL = URL.createObjectURL(blob)) : song.file;
     audio.play().then(() => {
         document.getElementById("playerTitle").innerText = song.title;
         document.getElementById("playerArtist").innerText = song.artist;
     }).catch(() => {
-        document.getElementById("playerTitle").innerText = "Error Playing";
+        document.getElementById("playerTitle").innerText = "⚠️ Error Playing";
     });
 }
 
 function toggleLike(e, index) {
-    if(e) e.stopPropagation();
+    if (e) e.stopPropagation();
     const song = songs[index];
-    const exists = likedSongs.findIndex(s => s.file === song.file);
-    if(exists === -1) likedSongs.push(song);
-    else likedSongs.splice(exists, 1);
+    const idx = likedSongs.findIndex(s => s.file === song.file);
+    if (idx === -1) likedSongs.push(song);
+    else likedSongs.splice(idx, 1);
     
     localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
     loadSongs();
@@ -131,20 +130,23 @@ async function triggerOfflineSave(url) {
 
     try {
         let res = await fetch(url, { mode: 'cors' }).catch(() => null);
-        if(!res || !res.ok) {
+        if (!res || !res.ok) {
             res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
         }
         const blob = await res.blob();
-        saveSongOffline(url, blob, true);
+        saveSongOffline(url, blob);
         text.innerText = "✅ Done!";
         setTimeout(() => toast.classList.add("hidden"), 2000);
     } catch {
         text.innerText = "❌ Blocked. Opening Link...";
-        setTimeout(() => { toast.classList.add("hidden"); window.open(url, '_blank'); }, 2000);
+        setTimeout(() => { 
+            toast.classList.add("hidden"); 
+            window.open(url, '_blank'); 
+        }, 2000);
     }
 }
 
-// --- CONTEXT MENU ---
+// --- CONTEXT MENU & MODALS ---
 function openContextMenu(e, index) {
     e.preventDefault();
     activeContextIndex = index;
@@ -153,9 +155,14 @@ function openContextMenu(e, index) {
     menu.style.left = e.pageX + "px";
     menu.style.top = e.pageY + "px";
 }
-document.addEventListener("click", () => document.getElementById("contextMenu").style.display = "none");
+
+document.addEventListener("click", () => {
+    const menu = document.getElementById("contextMenu");
+    if (menu) menu.style.display = "none";
+});
 
 function handleCmDownload() { triggerOfflineSave(songs[activeContextIndex].file); }
+
 function handleCmEdit() {
     const s = songs[activeContextIndex];
     document.getElementById("editTitleInput").value = s.title;
@@ -163,8 +170,9 @@ function handleCmEdit() {
     document.getElementById("editCoverInput").value = s.cover;
     document.getElementById("editModal").style.display = "flex";
 }
+
 function handleCmDelete() {
-    if(confirm("Delete this song?")) {
+    if (confirm("Delete this song permanently?")) {
         const song = songs[activeContextIndex];
         songs.splice(activeContextIndex, 1);
         likedSongs = likedSongs.filter(s => s.file !== song.file);
@@ -195,26 +203,31 @@ function saveEditedSong() {
 // --- HELPERS ---
 function addSong() {
     const name = document.getElementById("songName").value;
+    const artist = document.getElementById("artistName").value || "Unknown";
+    const cover = document.getElementById("coverURL").value || "https://picsum.photos/200";
     const url = document.getElementById("songURL").value;
     const fileInput = document.getElementById("localAudio").files[0];
-    if(!name) return alert("Name required");
+
+    if (!name) return alert("Name required");
 
     let finalFile = url;
-    if(fileInput) {
+    if (fileInput) {
         finalFile = "local_" + Date.now();
-        saveSongOffline(finalFile, fileInput, true);
+        saveSongOffline(finalFile, fileInput);
     }
-    songs.push({title: name, artist: document.getElementById("artistName").value, cover: document.getElementById("coverURL").value || "https://picsum.photos/200", file: finalFile});
+
+    songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
     localStorage.setItem('songs', JSON.stringify(songs));
     loadSongs();
-    alert("Added!");
+    alert("Song added!");
 }
 
-function showSection(id) {
+function showSection(id) { 
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    if(id === 'library') renderLibrary();
+    if (id === 'library') renderLibrary();
 }
+
 function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
 function nextSong() { playSong((currentSong + 1) % songs.length); }
 function closePlayer() { document.getElementById("player").style.display="none"; audio.pause(); }
@@ -224,8 +237,9 @@ function closeEditModal() { document.getElementById("editModal").style.display="
 function scrub(e) { audio.currentTime = (e.offsetX / e.target.offsetWidth) * audio.duration; }
 
 audio.addEventListener('timeupdate', () => {
-    document.getElementById("progressBar").style.width = (audio.currentTime/audio.duration)*100 + "%";
+    const bar = document.getElementById("progressBar");
+    if (bar && audio.duration) bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
 });
 
-// Init
+// Initialize
 loadSongs();
