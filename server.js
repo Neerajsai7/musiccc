@@ -30,7 +30,7 @@ function getOfflineSong(url) {
     return new Promise((resolve) => {
         if (!db) return resolve(null);
         const req = db.transaction(["offlineAudio"], "readonly").objectStore("offlineAudio").get(url);
-        req.onsccess = () => resolve(req.result);
+        req.onsuccess = () => resolve(req.result); // TYPO FIXED HERE
         req.onerror = () => resolve(null);
     });
 }
@@ -147,6 +147,7 @@ async function playSong(index) {
     document.getElementById("player").style.display = "flex";
     document.getElementById("playerCover").src = song.cover;
     document.getElementById("playerTitle").innerText = "Loading...";
+    document.getElementById("playerArtist").innerText = "";
     
     const blob = await getOfflineSong(song.file);
     if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
@@ -200,6 +201,7 @@ async function triggerOfflineSave(url) {
         let res;
         let fetchUrl = url;
         
+        // Skip Proxy 1 for Catbox since it handles direct requests well
         if (!url.includes("catbox.moe")) {
             fetchUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
         }
@@ -325,6 +327,7 @@ function addSong() {
     songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
     localStorage.setItem('songs', JSON.stringify(songs));
     
+    // Clear inputs
     document.getElementById("songName").value = "";
     document.getElementById("artistName").value = "";
     document.getElementById("coverURL").value = "";
@@ -336,11 +339,14 @@ function addSong() {
 }
 
 function showSection(id) { 
+    // Hide all sections, show the clicked one
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     
+    // Change Header Title
     document.getElementById("pageTitle").innerText = id.charAt(0).toUpperCase() + id.slice(1);
     
+    // Toggle Search Bar
     let searchBar = document.getElementById("searchInput");
     if (id === "search") {
         searchBar.style.display = "block";
@@ -387,7 +393,6 @@ audio.addEventListener('timeupdate', () => {
     }
 });
 
-// Auto-play next song when current song ends
 audio.addEventListener('ended', nextSong);
 
 // --- KEYBOARD CONTROLS ---
