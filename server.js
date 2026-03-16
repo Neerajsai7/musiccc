@@ -10,7 +10,7 @@ request.onupgradeneeded = (e) => {
 };
 request.onsuccess = (e) => {
     db = e.target.result;
-    renderLibrary(); // Initial render once DB is ready
+    renderLibrary();
 };
 
 function saveSongOffline(url, blob) {
@@ -46,6 +46,7 @@ let currentSong = 0;
 let isLooping = false;
 let currentObjectURL = null;
 let activeContextIndex = -1;
+let touchTimer = null; // Used for mobile long-press detection
 
 // --- RENDERING ---
 function loadSongs() {
@@ -55,7 +56,11 @@ function loadSongs() {
     songs.forEach((song, index) => {
         const isLiked = likedSongs.some(s => s.file === song.file);
         grid.innerHTML += `
-        <div class="card" oncontextmenu="openContextMenu(event, ${index})">
+        <div class="card" 
+             oncontextmenu="openContextMenu(event, ${index})" 
+             ontouchstart="handleTouchStart(event, ${index})" 
+             ontouchend="handleTouchEnd()" 
+             ontouchmove="handleTouchEnd()">
             <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
             <div onclick="playSong(${index})">
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
@@ -75,7 +80,12 @@ function renderLibrary() {
         likedSongs.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
             likedGrid.innerHTML += `
-            <div class="card" onclick="playSong(${idx})" oncontextmenu="openContextMenu(event, ${idx})">
+            <div class="card" 
+                 onclick="playSong(${idx})" 
+                 oncontextmenu="openContextMenu(event, ${idx})"
+                 ontouchstart="handleTouchStart(event, ${idx})" 
+                 ontouchend="handleTouchEnd()" 
+                 ontouchmove="handleTouchEnd()">
                 <div class="like" onclick="toggleLike(event,${idx})">💙</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -90,7 +100,12 @@ function renderLibrary() {
             const idx = songs.findIndex(s => s.file === song.file);
             const isLiked = likedSongs.some(ls => ls.file === song.file);
             downloadedGrid.innerHTML += `
-            <div class="card" onclick="playSong(${idx})" oncontextmenu="openContextMenu(event, ${idx})">
+            <div class="card" 
+                 onclick="playSong(${idx})" 
+                 oncontextmenu="openContextMenu(event, ${idx})"
+                 ontouchstart="handleTouchStart(event, ${idx})" 
+                 ontouchend="handleTouchEnd()" 
+                 ontouchmove="handleTouchEnd()">
                 <div class="like" onclick="toggleLike(event,${idx})">${isLiked ? "💙" : "🤍"}</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -138,38 +153,86 @@ function toggleLoop() {
     document.getElementById("loopBtn").classList.toggle("loop-active", isLooping);
 }
 
+// ========================================================
+// MOBILE TIMEOUT & CATBOX DOWNLOAD LOGIC
+// ========================================================
 async function triggerOfflineSave(url) {
     const toast = document.getElementById("downloadToast");
     const text = document.getElementById("toastText");
+    const spinner = document.getElementById("toastSpinner");
+    
     toast.classList.remove("hidden");
     text.innerText = "Downloading...";
+    spinner.style.display = "block"; // Show spinner
+
+    // 1. Create a 15-second strict timeout for Mobile Networks
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-        let res = await fetch(url, { mode: 'cors' }).catch(() => null);
-        if (!res || !res.ok) {
-            res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
+        let fetchUrl = url;
+        
+        // 2. Direct Download for Catbox (Skip Proxy)
+        if (!url.includes("catbox.moe")) {
+            fetchUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
         }
+
+        let res = await fetch(fetchUrl, { signal: controller.signal, mode: 'cors' }).catch(() => null);
+        
+        if (!res || !res.ok) {
+            text.innerText = "Trying backup proxy...";
+            let backupUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+            res = await fetch(backupUrl, { signal: controller.signal });
+        }
+
+        clearTimeout(timeoutId); // Success, clear the timeout
+        if (!res || !res.ok) throw new Error("Blocked by server");
+
         const blob = await res.blob();
         saveSongOffline(url, blob);
+        
+        spinner.style.display = "none";
         text.innerText = "✅ Done!";
         setTimeout(() => toast.classList.add("hidden"), 2000);
-    } catch {
-        text.innerText = "❌ Blocked. Opening Link...";
-        setTimeout(() => { 
-            toast.classList.add("hidden"); 
-            window.open(url, '_blank'); 
-        }, 2000);
+
+    } catch (error) {
+        clearTimeout(timeoutId);
+        spinner.style.display = "none";
+        
+        // 3. Handle Timed Out vs Blocked
+        if (error.name === 'AbortError') {
+            text.innerText = "⏱️ Connection Timed Out";
+        } else {
+            text.innerText = "❌ Blocked or Failed";
+        }
+        
+        setTimeout(() => toast.classList.add("hidden"), 3000);
     }
 }
 
-// --- CONTEXT MENU & MODALS ---
+// --- CONTEXT MENU & MOBILE LONG PRESS ---
+function handleTouchStart(e, index) {
+    touchTimer = setTimeout(() => {
+        openContextMenu(e, index);
+    }, 600); // 600ms hold to open menu on mobile
+}
+
+function handleTouchEnd() {
+    clearTimeout(touchTimer); // Cancel if user lets go early or scrolls
+}
+
 function openContextMenu(e, index) {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     activeContextIndex = index;
     const menu = document.getElementById("contextMenu");
     menu.style.display = "block";
-    menu.style.left = e.pageX + "px";
-    menu.style.top = e.pageY + "px";
+    
+    // Handle coordinates for both Mouse and Mobile Touch
+    let x = e.type === 'touchstart' ? e.touches[0].pageX : e.pageX;
+    let y = e.type === 'touchstart' ? e.touches[0].pageY : e.pageY;
+    
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
 }
 
 document.addEventListener("click", () => {
@@ -188,17 +251,21 @@ function handleCmEdit() {
 }
 
 function handleCmDelete() {
-    if (confirm("Delete this song?")) {
+    if (confirm("Delete this song permanently?")) {
         const song = songs[activeContextIndex];
         songs.splice(activeContextIndex, 1);
         likedSongs = likedSongs.filter(ls => ls.file !== song.file);
         downloadedURLs = downloadedURLs.filter(url => url !== song.file);
+        
         localStorage.setItem('songs', JSON.stringify(songs));
         localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
+        
         const store = db.transaction(["offlineAudio"], "readwrite").objectStore("offlineAudio");
         store.delete(song.file);
-        loadSongs(); renderLibrary();
+        
+        loadSongs();
+        renderLibrary();
     }
 }
 
@@ -207,24 +274,31 @@ function saveEditedSong() {
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
     localStorage.setItem('songs', JSON.stringify(songs));
-    loadSongs(); renderLibrary(); closeEditModal();
+    loadSongs();
+    renderLibrary();
+    closeEditModal();
 }
 
 // --- HELPERS ---
 function addSong() {
     const name = document.getElementById("songName").value;
+    const artist = document.getElementById("artistName").value || "Unknown";
+    const cover = document.getElementById("coverURL").value || "https://picsum.photos/200";
     const url = document.getElementById("songURL").value;
     const fileInput = document.getElementById("localAudio").files[0];
+
     if (!name) return alert("Name required");
 
-    let final = url;
+    let finalFile = url;
     if (fileInput) {
-        final = "local_" + Date.now();
-        saveSongOffline(final, fileInput);
+        finalFile = "local_" + Date.now();
+        saveSongOffline(finalFile, fileInput);
     }
-    songs.push({ title: name, artist: document.getElementById("artistName").value, cover: document.getElementById("coverURL").value || "https://picsum.photos/200", file: final });
+
+    songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
     localStorage.setItem('songs', JSON.stringify(songs));
-    loadSongs(); alert("Added!");
+    loadSongs();
+    alert("Song added!");
 }
 
 function showSection(id) { 
@@ -236,7 +310,7 @@ function showSection(id) {
 function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
 function nextSong() { playSong((currentSong + 1) % songs.length); }
 function prevSong() { playSong((currentSong - 1 + songs.length) % songs.length); }
-function closePlayer() { document.getElementById("player").style.display="none"; audio.pause(); }
+function closePlayer(event) { if(event) event.stopPropagation(); document.getElementById("player").style.display="none"; audio.pause(); }
 function shrinkPlayer() { document.getElementById("player").classList.remove("fullscreen"); }
 function expandPlayer() { document.getElementById("player").classList.add("fullscreen"); }
 function closeEditModal() { document.getElementById("editModal").style.display="none"; }
@@ -252,5 +326,5 @@ audio.addEventListener('timeupdate', () => {
     if (bar && audio.duration) bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
 });
 
-// INITIAL START
+// Initialize App
 loadSongs();
