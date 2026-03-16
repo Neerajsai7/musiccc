@@ -30,7 +30,7 @@ function getOfflineSong(url) {
     return new Promise((resolve) => {
         if (!db) return resolve(null);
         const req = db.transaction(["offlineAudio"], "readonly").objectStore("offlineAudio").get(url);
-        req.onsuccess = () => resolve(req.result);
+        req.onsccess = () => resolve(req.result);
         req.onerror = () => resolve(null);
     });
 }
@@ -192,25 +192,27 @@ async function triggerOfflineSave(url) {
     text.innerText = "Downloading...";
     spinner.style.display = "block";
 
+    // 15-second strict timeout for Mobile Networks
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
         let res;
+        let fetchUrl = url;
         
-        // Step 1: Try Direct fetch first (Best for Catbox)
-        res = await fetch(url).catch(() => null);
-        
-        // Step 2: Try Proxy 1 (AllOrigins) if direct fails
-        if (!res || !res.ok) {
-            text.innerText = "Using Proxy 1...";
-            res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url)).catch(() => null);
-        }
-        
-        // Step 3: Try Proxy 2 (Corsproxy) if proxy 1 fails
-        if (!res || !res.ok) {
-            text.innerText = "Using Proxy 2...";
-            res = await fetch("https://corsproxy.io/?" + encodeURIComponent(url)).catch(() => null);
+        if (!url.includes("catbox.moe")) {
+            fetchUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
         }
 
-        // If all 3 fail, throw error
+        res = await fetch(fetchUrl, { signal: controller.signal, mode: 'cors' }).catch(() => null);
+        
+        if (!res || !res.ok) {
+            text.innerText = "Trying backup proxy...";
+            let backupUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
+            res = await fetch(backupUrl, { signal: controller.signal });
+        }
+
+        clearTimeout(timeoutId); 
         if (!res || !res.ok) throw new Error("Blocked by server");
 
         const blob = await res.blob();
@@ -221,8 +223,15 @@ async function triggerOfflineSave(url) {
         setTimeout(() => toast.classList.add("hidden"), 2000);
 
     } catch (error) {
+        clearTimeout(timeoutId);
         spinner.style.display = "none";
-        text.innerText = "❌ Blocked. Try Uploading.";
+        
+        if (error.name === 'AbortError') {
+            text.innerText = "⏱️ Connection Timed Out";
+        } else {
+            text.innerText = "❌ Blocked or Failed";
+        }
+        
         setTimeout(() => toast.classList.add("hidden"), 3000);
     }
 }
@@ -316,7 +325,6 @@ function addSong() {
     songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
     localStorage.setItem('songs', JSON.stringify(songs));
     
-    // Clear inputs after adding
     document.getElementById("songName").value = "";
     document.getElementById("artistName").value = "";
     document.getElementById("coverURL").value = "";
@@ -328,14 +336,11 @@ function addSong() {
 }
 
 function showSection(id) { 
-    // Hide all sections, show the clicked one
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     
-    // Change the Header Title
     document.getElementById("pageTitle").innerText = id.charAt(0).toUpperCase() + id.slice(1);
     
-    // Show or Hide the Search Bar
     let searchBar = document.getElementById("searchInput");
     if (id === "search") {
         searchBar.style.display = "block";
@@ -362,17 +367,32 @@ function scrub(e) {
     audio.currentTime = percent * audio.duration;
 }
 
-audio.addEventListener('timeupdate', () => {
-    const bar = document.getElementById("progressBar");
-    if (bar && audio.duration) bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
+// --- TIME FORMATTING & UI UPDATE ---
+function formatTime(sec) {
+    if (isNaN(sec)) return "0:00";
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' + s : s}`;
+}
+
+audio.addEventListener('loadedmetadata', () => {
+    document.getElementById("duration").innerText = formatTime(audio.duration);
 });
 
-// ========================================================
-// KEYBOARD CONTROLS (RESTORED SPACEBAR PLAY/PAUSE)
-// ========================================================
+audio.addEventListener('timeupdate', () => {
+    const bar = document.getElementById("progressBar");
+    if (bar && audio.duration) {
+        bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
+        document.getElementById("currentTime").innerText = formatTime(audio.currentTime);
+    }
+});
+
+// Auto-play next song when current song ends
+audio.addEventListener('ended', nextSong);
+
+// --- KEYBOARD CONTROLS ---
 document.addEventListener("keydown", function(event) {
     let active = document.activeElement.tagName;
-    // Don't trigger if typing in search bar or add song inputs
     if (active === "INPUT" || active === "TEXTAREA") return;
     
     if (event.code === "Space") {
