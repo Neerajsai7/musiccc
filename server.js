@@ -30,15 +30,27 @@ function getOfflineSong(url) {
     return new Promise((resolve) => {
         if (!db) return resolve(null);
         const req = db.transaction(["offlineAudio"], "readonly").objectStore("offlineAudio").get(url);
-        req.onsuccess = () => resolve(req.result); // TYPO FIXED HERE
+        req.onsuccess = () => resolve(req.result);
         req.onerror = () => resolve(null);
     });
 }
 
-// --- DATA & STATE ---
-let songs = JSON.parse(localStorage.getItem('songs')) || [
-    {title:"Dream Waves",artist:"Sky Artist",cover:"https://picsum.photos/200?1",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"},
-    {title:"Cloud Drift",artist:"BlueTone",cover:"https://picsum.photos/200?2",file:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"}
+// --- DATA & STATE (NEW PLAYLIST) ---
+// Using 'sky_songs_v2' to force the browser to load the new playlist for everyone
+let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
+    // Top 6 - These will show on the Home Page
+    {title: "Kesariya (Hindi)", artist: "Brahmāstra", cover: "https://picsum.photos/200?random=1", file: "https://files.catbox.moe/mn42vj.mp3"},
+    {title: "Boyfriend", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=2", file: "https://files.catbox.moe/fcllvp.mp3"},
+    {title: "Bulleya", artist: "Sultan", cover: "https://picsum.photos/200?random=3", file: "https://files.catbox.moe/195dty.mp3"},
+    {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3"},
+    {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3"},
+    {title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=6", file: "https://files.catbox.moe/y0df1k.mp3"},
+    // Bottom 5 - These are hidden from Home, but will appear when Searched!
+    {title: "Aari Aari", artist: "Dhurandhar-2", cover: "https://picsum.photos/200?random=7", file: "https://files.catbox.moe/4a3svo.mp3"},
+    {title: "MF Gabhru", artist: "Unknown", cover: "https://picsum.photos/200?random=8", file: "https://files.catbox.moe/bc3mcw.mp3"},
+    {title: "You Are You Though", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=9", file: "https://files.catbox.moe/hcselx.mp3"},
+    {title: "I Really Do", artist: "Unknown", cover: "https://picsum.photos/200?random=10", file: "https://files.catbox.moe/hs231u.mp3"},
+    {title: "For A Reason", artist: "Unknown", cover: "https://picsum.photos/200?random=11", file: "https://files.catbox.moe/eq7c5h.mp3"}
 ];
 
 let audio = new Audio();
@@ -53,8 +65,14 @@ function loadSongs() {
     const grid = document.getElementById("songGrid");
     if (!grid) return;
     grid.innerHTML = "";
-    songs.forEach((song, index) => {
+    
+    // Only loop through the first 6 songs so the Home page isn't cluttered
+    for (let index = 0; index < songs.length; index++) {
+        if (index >= 6) break; // Stops rendering after 6 songs
+        
+        const song = songs[index];
         const isLiked = likedSongs.some(s => s.file === song.file);
+        
         grid.innerHTML += `
         <div class="card" 
              oncontextmenu="openContextMenu(event, ${index})" 
@@ -68,7 +86,7 @@ function loadSongs() {
                 <div class="artist">${song.artist}</div>
             </div>
         </div>`;
-    });
+    }
 }
 
 function renderLibrary() {
@@ -121,6 +139,7 @@ function searchSongs() {
     let results = document.getElementById("searchResults");
     results.innerHTML = "";
     
+    // Search checks EVERY song, even the ones hidden from the home page
     songs.forEach((song, index) => {
         if (song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query)) {
             const isLiked = likedSongs.some(s => s.file === song.file);
@@ -284,7 +303,7 @@ function handleCmDelete() {
         likedSongs = likedSongs.filter(ls => ls.file !== song.file);
         downloadedURLs = downloadedURLs.filter(url => url !== song.file);
         
-        localStorage.setItem('songs', JSON.stringify(songs));
+        localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
         localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
         
@@ -301,7 +320,7 @@ function saveEditedSong() {
     songs[activeContextIndex].title = document.getElementById("editTitleInput").value;
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
-    localStorage.setItem('songs', JSON.stringify(songs));
+    localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
     loadSongs();
     renderLibrary();
     searchSongs();
@@ -325,7 +344,7 @@ function addSong() {
     }
 
     songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
-    localStorage.setItem('songs', JSON.stringify(songs));
+    localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
     
     // Clear inputs
     document.getElementById("songName").value = "";
