@@ -83,6 +83,8 @@ body {
     cursor:pointer;
     position:relative;
     transition:0.35s;
+    user-select: none; /* Prevents text highlighting on mobile long-press */
+    -webkit-user-select: none;
 }
 
 .card:hover {
@@ -296,7 +298,7 @@ button:hover {
 .context-menu {
     position: absolute;
     display: none;
-    background: rgba(11, 19, 43, 0.85);
+    background: rgba(11, 19, 43, 0.95);
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
@@ -369,6 +371,18 @@ button:hover {
 }
 
 .toast.hidden { opacity: 0; transform: translate(-50%, -40px); visibility: hidden; }
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: #00f2fe;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: none;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
 .section {display:none;}
 .active {display:block;}
@@ -480,7 +494,7 @@ button:hover {
 </div>
 
 <div id="downloadToast" class="toast hidden">
-    <div id="toastSpinner" style="width:20px; height:20px; border:3px solid rgba(255,255,255,0.2); border-top-color:#00f2fe; border-radius:50%; animation:spin 1s linear infinite;"></div>
+    <div class="spinner" id="toastSpinner"></div>
     <span id="toastText">Downloading...</span>
 </div>
 
