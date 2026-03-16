@@ -327,16 +327,15 @@ function addSong() {
     alert("Song added!");
 }
 
-// FIX: RESTORED HEADER TEXT AND SEARCH BAR VISIBILITY
 function showSection(id) { 
-    // 1. Hide all sections, show the clicked one
+    // Hide all sections, show the clicked one
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     
-    // 2. Change the Header Title
+    // Change the Header Title
     document.getElementById("pageTitle").innerText = id.charAt(0).toUpperCase() + id.slice(1);
     
-    // 3. Show or Hide the Search Bar
+    // Show or Hide the Search Bar
     let searchBar = document.getElementById("searchInput");
     if (id === "search") {
         searchBar.style.display = "block";
@@ -366,6 +365,20 @@ function scrub(e) {
 audio.addEventListener('timeupdate', () => {
     const bar = document.getElementById("progressBar");
     if (bar && audio.duration) bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
+});
+
+// ========================================================
+// KEYBOARD CONTROLS (RESTORED SPACEBAR PLAY/PAUSE)
+// ========================================================
+document.addEventListener("keydown", function(event) {
+    let active = document.activeElement.tagName;
+    // Don't trigger if typing in search bar or add song inputs
+    if (active === "INPUT" || active === "TEXTAREA") return;
+    
+    if (event.code === "Space") {
+        event.preventDefault();
+        togglePlay();
+    }
 });
 
 // Initialize App
