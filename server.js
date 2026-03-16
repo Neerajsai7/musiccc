@@ -36,16 +36,13 @@ function getOfflineSong(url) {
 }
 
 // --- DATA & STATE (NEW PLAYLIST) ---
-// Using 'sky_songs_v2' to force the browser to load the new playlist for everyone
 let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
-    // Top 6 - These will show on the Home Page
     {title: "Kesariya (Hindi)", artist: "Brahmāstra", cover: "https://picsum.photos/200?random=1", file: "https://files.catbox.moe/mn42vj.mp3"},
     {title: "Boyfriend", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=2", file: "https://files.catbox.moe/fcllvp.mp3"},
     {title: "Bulleya", artist: "Sultan", cover: "https://picsum.photos/200?random=3", file: "https://files.catbox.moe/195dty.mp3"},
     {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3"},
     {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3"},
     {title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=6", file: "https://files.catbox.moe/y0df1k.mp3"},
-    // Bottom 5 - These are hidden from Home, but will appear when Searched!
     {title: "Aari Aari", artist: "Dhurandhar-2", cover: "https://picsum.photos/200?random=7", file: "https://files.catbox.moe/4a3svo.mp3"},
     {title: "MF Gabhru", artist: "Unknown", cover: "https://picsum.photos/200?random=8", file: "https://files.catbox.moe/bc3mcw.mp3"},
     {title: "You Are You Though", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=9", file: "https://files.catbox.moe/hcselx.mp3"},
@@ -66,9 +63,8 @@ function loadSongs() {
     if (!grid) return;
     grid.innerHTML = "";
     
-    // Only loop through the first 6 songs so the Home page isn't cluttered
     for (let index = 0; index < songs.length; index++) {
-        if (index >= 6) break; // Stops rendering after 6 songs
+        if (index >= 6) break; 
         
         const song = songs[index];
         const isLiked = likedSongs.some(s => s.file === song.file);
@@ -139,7 +135,6 @@ function searchSongs() {
     let results = document.getElementById("searchResults");
     results.innerHTML = "";
     
-    // Search checks EVERY song, even the ones hidden from the home page
     songs.forEach((song, index) => {
         if (song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query)) {
             const isLiked = likedSongs.some(s => s.file === song.file);
@@ -212,7 +207,6 @@ async function triggerOfflineSave(url) {
     text.innerText = "Downloading...";
     spinner.style.display = "block";
 
-    // 15-second strict timeout for Mobile Networks
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -220,7 +214,6 @@ async function triggerOfflineSave(url) {
         let res;
         let fetchUrl = url;
         
-        // Skip Proxy 1 for Catbox since it handles direct requests well
         if (!url.includes("catbox.moe")) {
             fetchUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
         }
@@ -346,7 +339,6 @@ function addSong() {
     songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
     localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
     
-    // Clear inputs
     document.getElementById("songName").value = "";
     document.getElementById("artistName").value = "";
     document.getElementById("coverURL").value = "";
@@ -358,14 +350,11 @@ function addSong() {
 }
 
 function showSection(id) { 
-    // Hide all sections, show the clicked one
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     
-    // Change Header Title
     document.getElementById("pageTitle").innerText = id.charAt(0).toUpperCase() + id.slice(1);
     
-    // Toggle Search Bar
     let searchBar = document.getElementById("searchInput");
     if (id === "search") {
         searchBar.style.display = "block";
@@ -413,6 +402,17 @@ audio.addEventListener('timeupdate', () => {
 });
 
 audio.addEventListener('ended', nextSong);
+
+// --- DYNAMIC PLAY/PAUSE ICON UPDATE ---
+audio.addEventListener('play', () => {
+    const icon = document.getElementById("playPauseIcon");
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; // Switch to Pause Image
+});
+
+audio.addEventListener('pause', () => {
+    const icon = document.getElementById("playPauseIcon");
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; // Switch to Play Image
+});
 
 // --- KEYBOARD CONTROLS ---
 document.addEventListener("keydown", function(event) {
