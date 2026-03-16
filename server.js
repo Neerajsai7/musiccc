@@ -46,7 +46,7 @@ let currentSong = 0;
 let isLooping = false;
 let currentObjectURL = null;
 let activeContextIndex = -1;
-let touchTimer = null; // Used for mobile long-press detection
+let touchTimer = null; 
 
 // --- RENDERING ---
 function loadSongs() {
@@ -114,6 +114,32 @@ function renderLibrary() {
     }
 }
 
+// --- SEARCH ---
+function searchSongs() {
+    if (!document.getElementById("search").classList.contains("active")) return;
+    let query = document.getElementById("searchInput").value.toLowerCase();
+    let results = document.getElementById("searchResults");
+    results.innerHTML = "";
+    
+    songs.forEach((song, index) => {
+        if (song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query)) {
+            const isLiked = likedSongs.some(s => s.file === song.file);
+            results.innerHTML += `
+            <div class="card" 
+                 onclick="playSong(${index})" 
+                 oncontextmenu="openContextMenu(event, ${index})"
+                 ontouchstart="handleTouchStart(event, ${index})" 
+                 ontouchend="handleTouchEnd()" 
+                 ontouchmove="handleTouchEnd()">
+                <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
+                <div class="cover" style="background-image:url('${song.cover}')"></div>
+                <div class="title">${song.title}</div>
+                <div class="artist">${song.artist}</div>
+            </div>`;
+        }
+    });
+}
+
 // --- ACTIONS ---
 async function playSong(index) {
     currentSong = index;
@@ -145,6 +171,7 @@ function toggleLike(e, index) {
     localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
     loadSongs();
     renderLibrary();
+    searchSongs();
 }
 
 function toggleLoop() {
@@ -154,7 +181,7 @@ function toggleLoop() {
 }
 
 // ========================================================
-// MOBILE TIMEOUT & CATBOX DOWNLOAD LOGIC
+// MOBILE & PC DOWNLOAD LOGIC
 // ========================================================
 async function triggerOfflineSave(url) {
     const toast = document.getElementById("downloadToast");
@@ -163,49 +190,39 @@ async function triggerOfflineSave(url) {
     
     toast.classList.remove("hidden");
     text.innerText = "Downloading...";
-    spinner.style.display = "block"; // Show spinner
-
-    // 1. Create a 15-second strict timeout for Mobile Networks
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    spinner.style.display = "block";
 
     try {
-        let fetchUrl = url;
+        let res;
         
-        // 2. Direct Download for Catbox (Skip Proxy)
-        if (!url.includes("catbox.moe")) {
-            fetchUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
-        }
-
-        let res = await fetch(fetchUrl, { signal: controller.signal, mode: 'cors' }).catch(() => null);
+        // Step 1: Try Direct fetch first (Best for Catbox)
+        res = await fetch(url).catch(() => null);
         
+        // Step 2: Try Proxy 1 (AllOrigins) if direct fails
         if (!res || !res.ok) {
-            text.innerText = "Trying backup proxy...";
-            let backupUrl = "https://corsproxy.io/?" + encodeURIComponent(url);
-            res = await fetch(backupUrl, { signal: controller.signal });
+            text.innerText = "Using Proxy 1...";
+            res = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url)).catch(() => null);
+        }
+        
+        // Step 3: Try Proxy 2 (Corsproxy) if proxy 1 fails
+        if (!res || !res.ok) {
+            text.innerText = "Using Proxy 2...";
+            res = await fetch("https://corsproxy.io/?" + encodeURIComponent(url)).catch(() => null);
         }
 
-        clearTimeout(timeoutId); // Success, clear the timeout
+        // If all 3 fail, throw error
         if (!res || !res.ok) throw new Error("Blocked by server");
 
         const blob = await res.blob();
         saveSongOffline(url, blob);
         
         spinner.style.display = "none";
-        text.innerText = "✅ Done!";
+        text.innerText = "✅ Saved to Library!";
         setTimeout(() => toast.classList.add("hidden"), 2000);
 
     } catch (error) {
-        clearTimeout(timeoutId);
         spinner.style.display = "none";
-        
-        // 3. Handle Timed Out vs Blocked
-        if (error.name === 'AbortError') {
-            text.innerText = "⏱️ Connection Timed Out";
-        } else {
-            text.innerText = "❌ Blocked or Failed";
-        }
-        
+        text.innerText = "❌ Blocked. Try Uploading.";
         setTimeout(() => toast.classList.add("hidden"), 3000);
     }
 }
@@ -214,11 +231,11 @@ async function triggerOfflineSave(url) {
 function handleTouchStart(e, index) {
     touchTimer = setTimeout(() => {
         openContextMenu(e, index);
-    }, 600); // 600ms hold to open menu on mobile
+    }, 600); 
 }
 
 function handleTouchEnd() {
-    clearTimeout(touchTimer); // Cancel if user lets go early or scrolls
+    clearTimeout(touchTimer); 
 }
 
 function openContextMenu(e, index) {
@@ -227,7 +244,6 @@ function openContextMenu(e, index) {
     const menu = document.getElementById("contextMenu");
     menu.style.display = "block";
     
-    // Handle coordinates for both Mouse and Mobile Touch
     let x = e.type === 'touchstart' ? e.touches[0].pageX : e.pageX;
     let y = e.type === 'touchstart' ? e.touches[0].pageY : e.pageY;
     
@@ -266,6 +282,7 @@ function handleCmDelete() {
         
         loadSongs();
         renderLibrary();
+        searchSongs();
     }
 }
 
@@ -276,6 +293,7 @@ function saveEditedSong() {
     localStorage.setItem('songs', JSON.stringify(songs));
     loadSongs();
     renderLibrary();
+    searchSongs();
     closeEditModal();
 }
 
@@ -297,13 +315,37 @@ function addSong() {
 
     songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
     localStorage.setItem('songs', JSON.stringify(songs));
+    
+    // Clear inputs after adding
+    document.getElementById("songName").value = "";
+    document.getElementById("artistName").value = "";
+    document.getElementById("coverURL").value = "";
+    document.getElementById("songURL").value = "";
+    document.getElementById("localAudio").value = "";
+    
     loadSongs();
     alert("Song added!");
 }
 
+// FIX: RESTORED HEADER TEXT AND SEARCH BAR VISIBILITY
 function showSection(id) { 
+    // 1. Hide all sections, show the clicked one
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    
+    // 2. Change the Header Title
+    document.getElementById("pageTitle").innerText = id.charAt(0).toUpperCase() + id.slice(1);
+    
+    // 3. Show or Hide the Search Bar
+    let searchBar = document.getElementById("searchInput");
+    if (id === "search") {
+        searchBar.style.display = "block";
+        searchBar.focus(); 
+    } else {
+        searchBar.style.display = "none";
+        searchBar.value = ""; 
+    }
+
     if (id === 'library') renderLibrary();
 }
 
