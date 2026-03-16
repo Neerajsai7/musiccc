@@ -83,7 +83,7 @@ body {
     cursor:pointer;
     position:relative;
     transition:0.35s;
-    user-select: none; /* Prevents text highlighting on mobile long-press */
+    user-select: none;
     -webkit-user-select: none;
 }
 
@@ -184,10 +184,7 @@ body {
     background: rgba(255, 255, 255, 0.05);
 }
 
-#closePlayerBtn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.2);
-}
+#closePlayerBtn:hover { color: white; background: rgba(255, 255, 255, 0.2); }
 
 .player.fullscreen #closePlayerBtn { display: none; }
 
@@ -298,7 +295,7 @@ button:hover {
 .context-menu {
     position: absolute;
     display: none;
-    background: rgba(11, 19, 43, 0.95);
+    background: rgba(11, 19, 43, 0.85);
     backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
