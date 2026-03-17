@@ -3,7 +3,6 @@ let db;
 const request = indexedDB.open("SkyMusicDB", 1);
 let downloadedURLs = JSON.parse(localStorage.getItem('downloadedURLs')) || [];
 let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
-// NEW: Playlists State Array
 let playlists = JSON.parse(localStorage.getItem('sky_playlists')) || [];
 
 request.onupgradeneeded = (e) => {
@@ -58,7 +57,38 @@ let isLooping = false;
 let currentObjectURL = null;
 let activeContextIndex = -1;
 let touchTimer = null; 
-let currentViewedPlaylist = ""; // Tracks which playlist folder is currently open
+let currentViewedPlaylist = ""; 
+
+// ========================================================
+// NEW: CUSTOM STYLISH MODALS (Replaces alert & confirm)
+// ========================================================
+let confirmActionCallback = null;
+
+function customAlert(message) {
+    document.getElementById("customAlertMessage").innerText = message;
+    document.getElementById("customAlertModal").style.display = "flex";
+}
+
+function closeCustomAlert() {
+    document.getElementById("customAlertModal").style.display = "none";
+}
+
+function customConfirm(message, callback) {
+    document.getElementById("customConfirmMessage").innerText = message;
+    confirmActionCallback = callback;
+    document.getElementById("customConfirmModal").style.display = "flex";
+}
+
+function closeCustomConfirm() {
+    document.getElementById("customConfirmModal").style.display = "none";
+    confirmActionCallback = null;
+}
+
+document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
+    if (confirmActionCallback) confirmActionCallback();
+    closeCustomConfirm();
+});
+
 
 // --- RENDERING ---
 function loadSongs() {
@@ -93,7 +123,6 @@ function renderLibrary() {
     const downloadedGrid = document.getElementById("downloadedSongsGrid");
     const playlistsGrid = document.getElementById("playlistsGrid");
 
-    // 1. Render Playlists
     if (playlistsGrid) {
         playlistsGrid.innerHTML = playlists.length ? "" : "<p style='color:gray; width:100%;'>No custom playlists yet.</p>";
         playlists.forEach((p) => {
@@ -106,7 +135,6 @@ function renderLibrary() {
         });
     }
 
-    // 2. Render Liked Songs
     if (likedGrid) {
         likedGrid.innerHTML = likedSongs.length ? "" : "<p style='color:gray'>No liked songs yet.</p>";
         likedSongs.forEach((song) => {
@@ -125,7 +153,6 @@ function renderLibrary() {
         });
     }
 
-    // 3. Render Downloaded Songs
     if (downloadedGrid) {
         const offline = songs.filter(s => downloadedURLs.includes(s.file) || s.file.startsWith("local_"));
         downloadedGrid.innerHTML = offline.length ? "" : "<p style='color:gray'>No downloaded songs yet.</p>";
@@ -150,13 +177,21 @@ function renderLibrary() {
 // ========================================================
 // PLAYLIST FOLDER LOGIC
 // ========================================================
+// NEW: Enter key creates playlist
+document.getElementById("newPlaylistName").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        createNewPlaylist();
+    }
+});
+
 function createNewPlaylist() {
     const input = document.getElementById("newPlaylistName");
     const name = input.value.trim();
     if (!name) return;
     
     if (playlists.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-        return alert("A playlist with this name already exists!");
+        return customAlert("A playlist with this name already exists!");
     }
     
     playlists.push({ name: name, songs: [] });
@@ -204,11 +239,11 @@ function renderPlaylistView() {
 }
 
 function deleteCurrentPlaylist() {
-    if (confirm(`Are you sure you want to delete the playlist "${currentViewedPlaylist}"? The songs will not be deleted from your main library.`)) {
+    customConfirm(`Are you sure you want to delete the playlist "${currentViewedPlaylist}"?\n\nThe songs will not be deleted from your main library.`, () => {
         playlists = playlists.filter(p => p.name !== currentViewedPlaylist);
         localStorage.setItem('sky_playlists', JSON.stringify(playlists));
         showSection('library');
-    }
+    });
 }
 
 function handleCmAddToPlaylist() {
@@ -239,19 +274,18 @@ function addSongToPlaylist(playlistName) {
         if (!playlist.songs.includes(song.file)) {
             playlist.songs.push(song.file);
             localStorage.setItem('sky_playlists', JSON.stringify(playlists));
-            alert(`Added to ${playlistName}`);
+            customAlert(`Added to ${playlistName}`);
         } else {
-            alert(`Song is already in ${playlistName}`);
+            customAlert(`Song is already in ${playlistName}`);
         }
     }
     
     closeAddToPlaylistModal();
     
-    // Refresh playlist view if we are currently looking at it
     if (document.getElementById("playlistView").classList.contains("active") && currentViewedPlaylist === playlistName) {
         renderPlaylistView();
     }
-    renderLibrary(); // Update song counts on folders
+    renderLibrary(); 
 }
 
 // --- SEARCH ---
@@ -415,13 +449,12 @@ function handleCmEdit() {
 }
 
 function handleCmDelete() {
-    if (confirm("Delete this song permanently?")) {
+    customConfirm("Are you sure you want to delete this song permanently?", () => {
         const song = songs[activeContextIndex];
         songs.splice(activeContextIndex, 1);
         likedSongs = likedSongs.filter(ls => ls.file !== song.file);
         downloadedURLs = downloadedURLs.filter(url => url !== song.file);
         
-        // Remove from all playlists too
         playlists.forEach(p => {
             p.songs = p.songs.filter(f => f !== song.file);
         });
@@ -438,7 +471,7 @@ function handleCmDelete() {
         renderLibrary();
         if(document.getElementById("playlistView").classList.contains("active")) renderPlaylistView();
         searchSongs();
-    }
+    });
 }
 
 function saveEditedSong() {
@@ -461,7 +494,7 @@ function addSong() {
     const url = document.getElementById("songURL").value;
     const fileInput = document.getElementById("localAudio").files[0];
 
-    if (!name) return alert("Name required");
+    if (!name) return customAlert("Please enter a song name.");
 
     let finalFile = url;
     if (fileInput) {
@@ -479,14 +512,13 @@ function addSong() {
     document.getElementById("localAudio").value = "";
     
     loadSongs();
-    alert("Song added!");
+    customAlert("Song successfully added!");
 }
 
 function showSection(id) { 
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
     
-    // Custom Title Logic for Playlists
     if (id !== "playlistView") {
         document.getElementById("pageTitle").innerText = id.charAt(0).toUpperCase() + id.slice(1);
     }
@@ -539,18 +571,16 @@ audio.addEventListener('timeupdate', () => {
 
 audio.addEventListener('ended', nextSong);
 
-// --- DYNAMIC PLAY/PAUSE ICON UPDATE ---
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; // Pause
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
 });
 
 audio.addEventListener('pause', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; // Play
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
 });
 
-// --- KEYBOARD CONTROLS ---
 document.addEventListener("keydown", function(event) {
     let active = document.activeElement.tagName;
     if (active === "INPUT" || active === "TEXTAREA") return;
