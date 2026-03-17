@@ -52,9 +52,9 @@ let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
 ];
 
 let audio = new Audio();
-let currentSong = -1; // -1 so nothing is highlighted on first load
+let currentSong = -1; 
 let isLooping = false;
-let isShuffle = false; // NEW: Shuffle state
+let isShuffle = false; 
 let currentObjectURL = null;
 let activeContextIndex = -1;
 let touchTimer = null; 
@@ -93,7 +93,6 @@ document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
 // ========================================================
 // RENDERING & NOW PLAYING HIGHLIGHT
 // ========================================================
-// Helper to update all grids at once so the 'playing' highlight is always accurate
 function refreshAllGrids() {
     loadSongs();
     renderLibrary();
@@ -334,7 +333,7 @@ function searchSongs() {
 // --- ACTIONS ---
 async function playSong(index) {
     currentSong = index;
-    refreshAllGrids(); // Updates the glowing highlights instantly
+    refreshAllGrids(); 
 
     const song = songs[index];
     document.getElementById("player").style.display = "flex";
@@ -347,9 +346,24 @@ async function playSong(index) {
     
     audio.src = blob ? (currentObjectURL = URL.createObjectURL(blob)) : song.file;
     audio.loop = isLooping;
+    
     audio.play().then(() => {
         document.getElementById("playerTitle").innerText = song.title;
         document.getElementById("playerArtist").innerText = song.artist;
+        
+        // NEW: Media Session API (Lock Screen Controls)
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: song.title,
+                artist: song.artist || 'SkyMusic',
+                artwork: [{ src: song.cover, sizes: '512x512', type: 'image/jpeg' }]
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => togglePlay());
+            navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+            navigator.mediaSession.setActionHandler('previoustrack', () => prevSong());
+            navigator.mediaSession.setActionHandler('nexttrack', () => nextSong());
+        }
     }).catch(() => {
         document.getElementById("playerTitle").innerText = "⚠️ Error Playing";
     });
@@ -372,7 +386,6 @@ function toggleLoop() {
     document.getElementById("loopBtn").classList.toggle("loop-active", isLooping);
 }
 
-// NEW: SHUFFLE FEATURE
 function toggleShuffle() {
     isShuffle = !isShuffle;
     document.getElementById("shuffleBtn").classList.toggle("shuffle-active", isShuffle);
@@ -397,7 +410,6 @@ function prevSong() {
         playSong((currentSong - 1 + songs.length) % songs.length);
     }
 }
-
 
 // ========================================================
 // MOBILE DOWNLOAD LOGIC
@@ -554,7 +566,6 @@ function addSong() {
     customAlert("Song successfully added!");
 }
 
-// NEW: HAMBURGER MENU MOBILE LOGIC
 function toggleSidebar() {
     document.getElementById('appSidebar').classList.toggle('open');
     document.getElementById('mobileOverlay').classList.toggle('active');
@@ -579,7 +590,6 @@ function showSection(id) {
 
     if (id === 'library') renderLibrary();
 
-    // Close mobile sidebar if clicked a link
     if (window.innerWidth <= 768) {
         document.getElementById('appSidebar').classList.remove('open');
         document.getElementById('mobileOverlay').classList.remove('active');
@@ -598,7 +608,6 @@ function scrub(e) {
     audio.currentTime = percent * audio.duration;
 }
 
-// --- VOLUME LOGIC ---
 document.getElementById('volumeSlider').addEventListener('input', (e) => {
     audio.volume = e.target.value;
 });
@@ -644,6 +653,52 @@ document.addEventListener("keydown", function(event) {
         togglePlay();
     }
 });
+
+// ========================================================
+// NEW: BACKUP & RESTORE DATA
+// ========================================================
+function exportBackup() {
+    const data = {
+        songs: JSON.parse(localStorage.getItem('sky_songs_v2')) || songs,
+        liked: JSON.parse(localStorage.getItem('likedSongs')) || [],
+        downloads: JSON.parse(localStorage.getItem('downloadedURLs')) || [],
+        playlists: JSON.parse(localStorage.getItem('sky_playlists')) || []
+    };
+    
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "skymusic_backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    customAlert("Backup exported successfully!");
+}
+
+function importBackup() {
+    const file = document.getElementById('backupFileInput').files[0];
+    if (!file) return customAlert("Please select a backup file first.");
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if(data.songs) localStorage.setItem('sky_songs_v2', JSON.stringify(data.songs));
+            if(data.liked) localStorage.setItem('likedSongs', JSON.stringify(data.liked));
+            if(data.downloads) localStorage.setItem('downloadedURLs', JSON.stringify(data.downloads));
+            if(data.playlists) localStorage.setItem('sky_playlists', JSON.stringify(data.playlists));
+            
+            customAlert("Backup restored successfully! Refreshing app...");
+            setTimeout(() => location.reload(), 1500);
+            
+        } catch(err) {
+            customAlert("Invalid backup file.");
+        }
+    };
+    reader.readAsText(file);
+}
 
 // Initialize App
 loadSongs();
