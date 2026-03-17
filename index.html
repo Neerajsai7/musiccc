@@ -273,7 +273,7 @@ button:hover {
     box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
-/* PLAYER CONTROLS */
+/* PLAYER CONTROLS (Transparent Images) */
 .player-controls { display: flex; gap: 8px; align-items: center; }
 
 .player-controls button {
@@ -554,17 +554,6 @@ button:hover {
         <div style="display:flex; justify-content:space-between; margin-top: 20px;">
             <button onclick="saveEditedSong()">Save</button>
             <button onclick="closeEditModal()" style="background: rgba(255,255,255,0.1);">Cancel</button>
-        </div>
-    </div>
-</div>
-
-<div id="confirmModal" class="modal-overlay">
-    <div class="modal-content">
-        <h3 id="confirmModalTitle">Confirm</h3>
-        <p id="confirmModalMessage" style="margin-bottom: 20px; font-size: 14px; color: #a0aec0; text-align: center;"></p>
-        <div style="display:flex; justify-content:space-between; margin-top: 20px;">
-            <button id="confirmModalBtn" style="background: rgba(255, 75, 43, 0.8); border-color: rgba(255, 75, 43, 1);">Delete</button>
-            <button onclick="closeConfirmModal()" style="background: rgba(255,255,255,0.1);">Cancel</button>
         </div>
     </div>
 </div>
