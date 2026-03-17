@@ -300,7 +300,7 @@ button:hover {
     filter: drop-shadow(0 0 8px #00f2fe);
 }
 
-.addForm input, .modal-content input {
+.addForm input, .modal-content input, .playlist-input {
     display:block;
     margin-bottom:10px;
     padding:10px;
@@ -320,7 +320,7 @@ button:hover {
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     padding: 8px;
-    width: 160px;
+    width: 170px;
     z-index: 2000;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
@@ -345,7 +345,7 @@ button:hover {
     margin-top: 5px;
 }
 
-/* EDIT MODAL */
+/* MODALS */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -446,14 +446,34 @@ button:hover {
 
         <div id="library" class="section">
             <h2 style="color:white; margin-bottom: 10px;">Your Library</h2>
+            
+            <h3 style="color:#f9ca24; margin: 20px 0 10px 0;">📂 Your Playlists</h3>
+            <div style="display:flex; gap:10px; margin-bottom: 20px; max-width: 400px;">
+                <input id="newPlaylistName" class="playlist-input" placeholder="New playlist name..." style="flex:1; margin:0;">
+                <button onclick="createNewPlaylist()">Create</button>
+            </div>
+            <div class="grid" id="playlistsGrid" style="margin-bottom: 20px;"></div>
+
+            <hr style="margin: 30px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.2);">
+
             <h3 style="color:#87CEEB; margin: 20px 0 10px 0;">❤️ Liked Songs</h3>
             <div class="grid" id="likedSongsGrid"></div>
+            
             <hr style="margin: 30px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.2);">
             
             <h3 style="color:#6dd5fa; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
                 <img src="https://files.catbox.moe/jh6nsk.jpg" style="width: 22px; height: 22px; border-radius: 4px;"> Downloaded & Offline
             </h3>
             <div class="grid" id="downloadedSongsGrid"></div>
+        </div>
+
+        <div id="playlistView" class="section">
+            <button onclick="showSection('library')" style="margin-bottom:20px;">⬅ Back to Library</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h2 id="playlistViewTitle" style="color:white;">Playlist</h2>
+                <button onclick="deleteCurrentPlaylist()" style="background: rgba(255, 75, 43, 0.2); color: #ff4b2b; border-color: rgba(255, 75, 43, 0.4);">🗑️ Delete Folder</button>
+            </div>
+            <div class="grid" id="playlistSongsGrid"></div>
         </div>
 
         <div id="addsong" class="section">
@@ -509,11 +529,20 @@ button:hover {
 </div>
 
 <div id="contextMenu" class="context-menu">
+    <div class="context-menu-item" onclick="handleCmAddToPlaylist()">📂 Add to Playlist</div>
     <div id="cmDownloadBtn" class="context-menu-item" onclick="handleCmDownload()">
         <img src="https://files.catbox.moe/jh6nsk.jpg" style="width: 16px; height: 16px; border-radius: 3px;" alt="Download"> Download
     </div>
     <div class="context-menu-item" onclick="handleCmEdit()">✏️ Edit Info</div>
     <div class="context-menu-item delete-item" onclick="handleCmDelete()">🗑️ Delete Song</div>
+</div>
+
+<div id="addToPlaylistModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>Select Playlist</h3>
+        <div id="playlistSelectionList" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px; max-height:200px; overflow-y:auto;"></div>
+        <button onclick="closeAddToPlaylistModal()" style="background: rgba(255,255,255,0.1); width:100%;">Cancel</button>
+    </div>
 </div>
 
 <div id="editModal" class="modal-overlay">
