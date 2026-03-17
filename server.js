@@ -52,7 +52,7 @@ let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
 ];
 
 let audio = new Audio();
-audio.crossOrigin = "anonymous"; // Required for Audio Equalizer
+audio.crossOrigin = "anonymous"; 
 let currentSong = -1; 
 let isLooping = false;
 let isShuffle = false; 
@@ -60,6 +60,10 @@ let currentObjectURL = null;
 let activeContextIndex = -1;
 let touchTimer = null; 
 let currentViewedPlaylist = ""; 
+
+// NEW: CONTEXTUAL PLAYBACK STATE
+let currentPlaybackQueue = [];
+let currentQueueContext = 'all';
 
 // ========================================================
 // AUDIO EQUALIZER LOGIC (Web Audio API)
@@ -74,18 +78,15 @@ function initAudioEQ() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     sourceNode = audioCtx.createMediaElementSource(audio);
     
-    // Bass Filter
     lowFilter = audioCtx.createBiquadFilter();
     lowFilter.type = "lowshelf";
     lowFilter.frequency.value = 250; 
     
-    // Midrange Filter
     midFilter = audioCtx.createBiquadFilter();
     midFilter.type = "peaking";
     midFilter.frequency.value = 1000;
     midFilter.Q.value = 1;
     
-    // Treble Filter
     highFilter = audioCtx.createBiquadFilter();
     highFilter.type = "highshelf";
     highFilter.frequency.value = 4000;
@@ -148,8 +149,42 @@ document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
 });
 
 // ========================================================
-// RENDERING & NOW PLAYING HIGHLIGHT
+// QUEUE BUILDING & RENDERING
 // ========================================================
+// NEW: Contextual Playback. Next/Prev stays within the folder you played from!
+function buildQueue(context) {
+    currentPlaybackQueue = [];
+    if (context === 'home') {
+        for (let i = 0; i < Math.min(6, songs.length); i++) currentPlaybackQueue.push(i);
+    } else if (context === 'liked') {
+        likedSongs.forEach(ls => {
+            let idx = songs.findIndex(s => s.file === ls.file);
+            if (idx > -1) currentPlaybackQueue.push(idx);
+        });
+    } else if (context === 'downloaded') {
+        songs.forEach((s, idx) => {
+            if (downloadedURLs.includes(s.file) || s.file.startsWith("local_")) currentPlaybackQueue.push(idx);
+        });
+    } else if (context === 'playlist') {
+        const p = playlists.find(p => p.name === currentViewedPlaylist);
+        if (p) {
+            p.songs.forEach(f => {
+                let idx = songs.findIndex(s => s.file === f);
+                if (idx > -1) currentPlaybackQueue.push(idx);
+            });
+        }
+    } else if (context === 'search') {
+        let query = document.getElementById("searchInput").value.toLowerCase();
+        songs.forEach((s, idx) => {
+            if (s.title.toLowerCase().includes(query) || s.artist.toLowerCase().includes(query)) {
+                currentPlaybackQueue.push(idx);
+            }
+        });
+    } else if (context === 'all') {
+        currentPlaybackQueue = songs.map((s, i) => i);
+    }
+}
+
 function refreshAllGrids() {
     loadSongs();
     renderLibrary();
@@ -179,7 +214,7 @@ function loadSongs() {
              ontouchmove="handleTouchEnd()">
             ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
             <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
-            <div onclick="playSong(${index})">
+            <div onclick="playSong(${index}, 'home')">
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
                 <div class="artist">${song.artist}</div>
@@ -212,7 +247,7 @@ function renderLibrary() {
             const isPlaying = (currentSong === idx);
             likedGrid.innerHTML += `
             <div class="card ${isPlaying ? 'playing-card' : ''}" 
-                 onclick="playSong(${idx})" 
+                 onclick="playSong(${idx}, 'liked')" 
                  oncontextmenu="openContextMenu(event, ${idx})"
                  ontouchstart="handleTouchStart(event, ${idx})" 
                  ontouchend="handleTouchEnd()" 
@@ -234,7 +269,7 @@ function renderLibrary() {
             const isPlaying = (currentSong === idx);
             downloadedGrid.innerHTML += `
             <div class="card ${isPlaying ? 'playing-card' : ''}" 
-                 onclick="playSong(${idx})" 
+                 onclick="playSong(${idx}, 'downloaded')" 
                  oncontextmenu="openContextMenu(event, ${idx})"
                  ontouchstart="handleTouchStart(event, ${idx})" 
                  ontouchend="handleTouchEnd()" 
@@ -298,7 +333,7 @@ function renderPlaylistView() {
             const isPlaying = (currentSong === idx);
             grid.innerHTML += `
             <div class="card ${isPlaying ? 'playing-card' : ''}" 
-                 onclick="playSong(${idx})" 
+                 onclick="playSong(${idx}, 'playlist')" 
                  oncontextmenu="openContextMenu(event, ${idx})"
                  ontouchstart="handleTouchStart(event, ${idx})" 
                  ontouchend="handleTouchEnd()" 
@@ -360,7 +395,7 @@ function addSongToPlaylist(playlistName) {
 }
 
 // ========================================================
-// SEARCH LOGIC
+// SEARCH LOGIC 
 // ========================================================
 function showRandomSearchSuggestions() {
     const results = document.getElementById("searchResults");
@@ -369,6 +404,10 @@ function showRandomSearchSuggestions() {
 
     let shuffled = [...songs].sort(() => 0.5 - Math.random());
     let selected = shuffled.slice(0, 12); 
+    
+    // Set up queue context instantly for random suggestions
+    currentQueueContext = 'random_search';
+    currentPlaybackQueue = selected.map(s => songs.indexOf(s));
 
     selected.forEach((song) => {
         const index = songs.indexOf(song); 
@@ -377,7 +416,7 @@ function showRandomSearchSuggestions() {
         
         results.innerHTML += `
         <div class="card ${isPlaying ? 'playing-card' : ''}" 
-             onclick="playSong(${index})" 
+             onclick="playSong(${index}, 'random_search')" 
              oncontextmenu="openContextMenu(event, ${index})"
              ontouchstart="handleTouchStart(event, ${index})" 
              ontouchend="handleTouchEnd()" 
@@ -409,7 +448,7 @@ function searchSongs() {
             const isPlaying = (currentSong === index);
             results.innerHTML += `
             <div class="card ${isPlaying ? 'playing-card' : ''}" 
-                 onclick="playSong(${index})" 
+                 onclick="playSong(${index}, 'search')" 
                  oncontextmenu="openContextMenu(event, ${index})"
                  ontouchstart="handleTouchStart(event, ${index})" 
                  ontouchend="handleTouchEnd()" 
@@ -425,7 +464,17 @@ function searchSongs() {
 }
 
 // --- ACTIONS ---
-async function playSong(index) {
+async function playSong(index, context = null) {
+    // 1. Manage the playback queue context
+    if (context) {
+        currentQueueContext = context;
+        if (context !== 'random_search') {
+            buildQueue(context);
+        }
+    } else if (currentPlaybackQueue.length === 0) {
+        buildQueue('all'); // Fail-safe
+    }
+
     currentSong = index;
     refreshAllGrids(); 
 
@@ -490,23 +539,32 @@ function toggleShuffle() {
     document.getElementById("shuffleBtn").classList.toggle("shuffle-active", isShuffle);
 }
 
+// Context-aware Next and Previous
 function nextSong() {
-    if (songs.length === 0) return;
+    if (currentPlaybackQueue.length === 0) return;
+    let queueIdx = currentPlaybackQueue.indexOf(currentSong);
+    if (queueIdx === -1) queueIdx = 0; 
+
     if (isShuffle) {
-        let rand = Math.floor(Math.random() * songs.length);
-        playSong(rand);
+        let rand = Math.floor(Math.random() * currentPlaybackQueue.length);
+        playSong(currentPlaybackQueue[rand]); // Continues using same queue
     } else {
-        playSong((currentSong + 1) % songs.length);
+        let nextQueueIdx = (queueIdx + 1) % currentPlaybackQueue.length;
+        playSong(currentPlaybackQueue[nextQueueIdx]);
     }
 }
 
 function prevSong() {
-    if (songs.length === 0) return;
+    if (currentPlaybackQueue.length === 0) return;
+    let queueIdx = currentPlaybackQueue.indexOf(currentSong);
+    if (queueIdx === -1) queueIdx = 0;
+
     if (isShuffle) {
-        let rand = Math.floor(Math.random() * songs.length);
-        playSong(rand);
+        let rand = Math.floor(Math.random() * currentPlaybackQueue.length);
+        playSong(currentPlaybackQueue[rand]);
     } else {
-        playSong((currentSong - 1 + songs.length) % songs.length);
+        let prevQueueIdx = (queueIdx - 1 + currentPlaybackQueue.length) % currentPlaybackQueue.length;
+        playSong(currentPlaybackQueue[prevQueueIdx]);
     }
 }
 
@@ -625,6 +683,21 @@ function openContextMenu(e, index) {
     
     menu.style.left = x + "px";
     menu.style.top = y + "px";
+
+    // Toggle Download vs Remove Download based on status
+    const song = songs[index];
+    const isDownloaded = downloadedURLs.includes(song.file) || song.file.startsWith("local_");
+    
+    const dlBtn = document.getElementById("cmDownloadBtn");
+    const rmDlBtn = document.getElementById("cmRemoveDownloadBtn");
+    
+    if (isDownloaded) {
+        if(dlBtn) dlBtn.style.display = "none";
+        if(rmDlBtn) rmDlBtn.style.display = "flex";
+    } else {
+        if(dlBtn) dlBtn.style.display = "flex";
+        if(rmDlBtn) rmDlBtn.style.display = "none";
+    }
 }
 
 document.addEventListener("click", () => {
@@ -633,6 +706,22 @@ document.addEventListener("click", () => {
 });
 
 function handleCmDownload() { triggerOfflineSave(songs[activeContextIndex].file); }
+
+// NEW: REMOVE DOWNLOAD FUNCTION
+function handleCmRemoveDownload() {
+    const song = songs[activeContextIndex];
+    customConfirm("Remove this song from offline downloads?", () => {
+        downloadedURLs = downloadedURLs.filter(url => url !== song.file);
+        localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
+        
+        const store = db.transaction(["offlineAudio"], "readwrite").objectStore("offlineAudio");
+        store.delete(song.file);
+        
+        refreshAllGrids();
+        document.getElementById("contextMenu").style.display = "none";
+        customAlert("Removed from downloads.");
+    });
+}
 
 function handleCmEdit() {
     const s = songs[activeContextIndex];
@@ -775,15 +864,14 @@ audio.addEventListener('timeupdate', () => {
 
 audio.addEventListener('ended', nextSong);
 
-// SWAPPED PLAY/PAUSE ICONS:
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; // Now Pause
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
 });
 
 audio.addEventListener('pause', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; // Now Play
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
 });
 
 document.addEventListener("keydown", function(event) {
@@ -793,6 +881,23 @@ document.addEventListener("keydown", function(event) {
     if (event.code === "Space") {
         event.preventDefault();
         togglePlay();
+    } else if (event.code === "ArrowRight") {
+        event.preventDefault();
+        nextSong();
+    } else if (event.code === "ArrowLeft") {
+        event.preventDefault();
+        prevSong();
+    } else if (event.code === "ArrowUp") {
+        event.preventDefault();
+        audio.volume = Math.min(1, audio.volume + 0.1);
+        document.getElementById('volumeSlider').value = audio.volume;
+    } else if (event.code === "ArrowDown") {
+        event.preventDefault();
+        audio.volume = Math.max(0, audio.volume - 0.1);
+        document.getElementById('volumeSlider').value = audio.volume;
+    } else if (event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        audio.muted = !audio.muted;
     }
 });
 
