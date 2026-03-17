@@ -302,10 +302,49 @@ function addSongToPlaylist(playlistName) {
     refreshAllGrids(); 
 }
 
-// --- SEARCH ---
+// ========================================================
+// SEARCH LOGIC (WITH RANDOM SUGGESTIONS)
+// ========================================================
+function showRandomSearchSuggestions() {
+    const results = document.getElementById("searchResults");
+    if (!results) return;
+    results.innerHTML = "";
+
+    // Shuffle the songs array to get random selection
+    let shuffled = [...songs].sort(() => 0.5 - Math.random());
+    let selected = shuffled.slice(0, 8); // Grab up to 8 random songs
+
+    selected.forEach((song) => {
+        const index = songs.indexOf(song); // Get original index for playing
+        const isLiked = likedSongs.some(s => s.file === song.file);
+        const isPlaying = (currentSong === index);
+        
+        results.innerHTML += `
+        <div class="card ${isPlaying ? 'playing-card' : ''}" 
+             onclick="playSong(${index})" 
+             oncontextmenu="openContextMenu(event, ${index})"
+             ontouchstart="handleTouchStart(event, ${index})" 
+             ontouchend="handleTouchEnd()" 
+             ontouchmove="handleTouchEnd()">
+            ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
+            <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
+            <div class="cover" style="background-image:url('${song.cover}')"></div>
+            <div class="title">${song.title}</div>
+            <div class="artist">${song.artist}</div>
+        </div>`;
+    });
+}
+
 function searchSongs() {
     if (!document.getElementById("search").classList.contains("active")) return;
     let query = document.getElementById("searchInput").value.toLowerCase();
+    
+    // Show random 8 songs if search bar is empty
+    if (query.trim() === "") {
+        showRandomSearchSuggestions();
+        return;
+    }
+
     let results = document.getElementById("searchResults");
     results.innerHTML = "";
     
@@ -419,7 +458,7 @@ async function triggerOfflineSave(url) {
     const spinner = document.getElementById("toastSpinner");
     
     toast.classList.remove("hidden");
-    spinner.style.display = "block"; // Show spinner while establishing connection
+    spinner.style.display = "block";
     text.innerText = "Connecting...";
 
     const controller = new AbortController();
@@ -443,7 +482,6 @@ async function triggerOfflineSave(url) {
 
         if (!res || !res.ok) throw new Error("Blocked by server");
 
-        // Connected! Hide the spinner so we can show just the percentage text
         spinner.style.display = "none";
         
         const contentLength = res.headers.get('content-length');
@@ -451,14 +489,12 @@ async function triggerOfflineSave(url) {
         
         let blob;
 
-        // If the server tells us the total size, we can read it stream chunk by chunk
         if (total && res.body) {
             const reader = res.body.getReader();
             let receivedLength = 0;
             let chunks = [];
             
             while(true) {
-                // Reset inactivity timeout so it doesn't fail long downloads
                 clearTimeout(timeoutId);
                 timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -468,12 +504,10 @@ async function triggerOfflineSave(url) {
                 chunks.push(value);
                 receivedLength += value.length;
                 
-                // Calculate percentage and update the text instantly
                 let percent = Math.floor((receivedLength / total) * 100);
                 text.innerText = `Downloading... ${percent}%`;
             }
             
-            // Combine all the downloaded chunks back into a single MP3 file
             let chunksAll = new Uint8Array(receivedLength);
             let position = 0;
             for(let chunk of chunks) {
@@ -484,7 +518,6 @@ async function triggerOfflineSave(url) {
             blob = new Blob([chunksAll], {type: res.headers.get('content-type') || 'audio/mpeg'});
 
         } else {
-            // Fallback: If server hides the file size, we can't do percentage
             text.innerText = "Downloading...";
             blob = await res.blob();
         }
@@ -626,6 +659,11 @@ function showSection(id) {
     if (id === "search") {
         searchBar.style.display = "block";
         searchBar.focus(); 
+        
+        // NEW: Populate random suggestions immediately if empty
+        if (searchBar.value.trim() === "") {
+            showRandomSearchSuggestions();
+        }
     } else {
         searchBar.style.display = "none";
         searchBar.value = ""; 
