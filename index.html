@@ -20,7 +20,6 @@ body {
     overflow: hidden;
 }
 
-/* SIDEBAR & MOBILE OVERLAY */
 .mobile-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.6); z-index: 999; display: none;
@@ -50,10 +49,8 @@ body {
 
 .sidebar li:hover { background:rgba(255,255,255,0.20); }
 
-/* MAIN */
 .main { flex:1; display:flex; flex-direction:column; position: relative; }
 
-/* TOPBAR */
 .topbar {
     height:60px;
     background:rgba(255,255,255,0.10);
@@ -79,7 +76,6 @@ body {
     background: rgba(255, 255, 255, 0.8);
 }
 
-/* CONTENT */
 .content { flex:1; padding:25px; overflow-y:auto; padding-bottom: 120px; }
 
 .grid {
@@ -88,7 +84,6 @@ body {
     gap:20px;
 }
 
-/* CARD */
 .card {
     background:rgba(255,255,255,0.10);
     backdrop-filter:blur(15px);
@@ -109,7 +104,6 @@ body {
     box-shadow:0 20px 40px rgba(0,0,0,0.4);
 }
 
-/* NOW PLAYING HIGHLIGHT */
 .playing-card {
     border: 2px solid #00f2fe !important;
     box-shadow: 0 0 15px rgba(0, 242, 254, 0.4) !important;
@@ -132,7 +126,6 @@ body {
 .title { font-weight:bold; color:white; margin-bottom: 5px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .artist { font-size:12px; color:#a0aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 
-/* LIKE ICON */
 .like {
     position:absolute;
     top:10px;
@@ -153,7 +146,6 @@ body {
 
 .like:hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.25); }
 
-/* PLAYER */
 .player {
     position:fixed;
     bottom:0; left: 0; width: 100%;
@@ -194,7 +186,6 @@ body {
 .player.fullscreen #playerTitle { font-size: 28px; margin-bottom: 10px; }
 .player.fullscreen #playerArtist { font-size: 18px; margin-bottom: 20px; color: #a0aec0; }
 
-/* CLOSE PLAYER BUTTON */
 #closePlayerBtn {
     position: absolute;
     top: 8px;
@@ -216,7 +207,6 @@ body {
 
 .player.fullscreen #closePlayerBtn { display: none; }
 
-/* BACK BUTTON */
 #backBtn {
     position: absolute;
     top: 30px;
@@ -276,7 +266,6 @@ body {
     color: #a0aec0;
 }
 
-/* VOLUME SLIDER */
 .volume-slider {
     width: 70px; height: 4px; border-radius: 2px;
     -webkit-appearance: none; background: rgba(255,255,255,0.2); outline: none;
@@ -286,7 +275,6 @@ body {
     background: #00f2fe; cursor: pointer;
 }
 
-/* GENERAL BUTTONS */
 button {
     background: rgba(255, 255, 255, 0.15);
     -webkit-backdrop-filter: blur(15px) saturate(150%);
@@ -309,7 +297,6 @@ button:hover {
     box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
-/* PLAYER CONTROLS (Transparent Images) */
 .player-controls { display: flex; gap: 8px; align-items: center; }
 
 .player-controls button {
@@ -348,7 +335,6 @@ button:hover {
     background: rgba(255,255,255,0.8);
 }
 
-/* CUSTOM RIGHT-CLICK CONTEXT MENU */
 .context-menu {
     position: absolute;
     display: none;
@@ -382,7 +368,6 @@ button:hover {
     margin-top: 5px;
 }
 
-/* MODALS */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -407,7 +392,6 @@ button:hover {
 
 .modal-content h3 { margin-bottom: 20px; text-align: center; }
 
-/* TOAST NOTIFICATION */
 .toast {
     position: fixed;
     top: 20px;
@@ -444,7 +428,6 @@ button:hover {
 .section {display:none;}
 .active {display:block;}
 
-/* MOBILE RESPONSIVENESS - HAMBURGER MENU */
 @media (max-width: 768px) {
     .hamburger { display: block; }
     .sidebar {
@@ -457,7 +440,6 @@ button:hover {
     .topbar { justify-content: flex-start; }
     .search { width: 100%; }
     
-    /* NEW: Hide specific player controls on mobile when minimized */
     .player:not(.fullscreen) .hide-on-mobile {
         display: none !important;
     }
@@ -613,7 +595,6 @@ button:hover {
             <button class="hide-on-mobile" id="loopBtn" onclick="toggleLoop()">
                 <img src="https://files.catbox.moe/rmtk4t.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Loop">
             </button>
-            
             <button onclick="prevSong()">
                 <img src="https://files.catbox.moe/cpi835.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Previous">
             </button>
@@ -632,6 +613,11 @@ button:hover {
     <div id="cmDownloadBtn" class="context-menu-item" onclick="handleCmDownload()">
         <img src="https://files.catbox.moe/jh6nsk.jpg" style="width: 16px; height: 16px; border-radius: 3px;" alt="Download"> Download
     </div>
+    
+    <div id="cmRemoveDownloadBtn" class="context-menu-item" onclick="handleCmRemoveDownload()" style="color: #f9ca24;">
+        ❌ Remove Download
+    </div>
+    
     <div class="context-menu-item" onclick="handleCmEdit()">✏️ Edit Info</div>
     <div class="context-menu-item delete-item" onclick="handleCmDelete()">🗑️ Delete Song</div>
 </div>
