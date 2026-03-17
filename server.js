@@ -22,7 +22,7 @@ function saveSongOffline(url, blob) {
         if (!downloadedURLs.includes(url)) {
             downloadedURLs.push(url);
             localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
-            renderLibrary();
+            refreshAllGrids();
         }
     };
 }
@@ -52,15 +52,16 @@ let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
 ];
 
 let audio = new Audio();
-let currentSong = 0;
+let currentSong = -1; // -1 so nothing is highlighted on first load
 let isLooping = false;
+let isShuffle = false; // NEW: Shuffle state
 let currentObjectURL = null;
 let activeContextIndex = -1;
 let touchTimer = null; 
 let currentViewedPlaylist = ""; 
 
 // ========================================================
-// NEW: CUSTOM STYLISH MODALS (Replaces alert & confirm)
+// CUSTOM MODALS
 // ========================================================
 let confirmActionCallback = null;
 
@@ -89,8 +90,19 @@ document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
     closeCustomConfirm();
 });
 
+// ========================================================
+// RENDERING & NOW PLAYING HIGHLIGHT
+// ========================================================
+// Helper to update all grids at once so the 'playing' highlight is always accurate
+function refreshAllGrids() {
+    loadSongs();
+    renderLibrary();
+    searchSongs();
+    if(document.getElementById("playlistView").classList.contains("active")) {
+        renderPlaylistView();
+    }
+}
 
-// --- RENDERING ---
 function loadSongs() {
     const grid = document.getElementById("songGrid");
     if (!grid) return;
@@ -101,13 +113,15 @@ function loadSongs() {
         
         const song = songs[index];
         const isLiked = likedSongs.some(s => s.file === song.file);
+        const isPlaying = (currentSong === index);
         
         grid.innerHTML += `
-        <div class="card" 
+        <div class="card ${isPlaying ? 'playing-card' : ''}" 
              oncontextmenu="openContextMenu(event, ${index})" 
              ontouchstart="handleTouchStart(event, ${index})" 
              ontouchend="handleTouchEnd()" 
              ontouchmove="handleTouchEnd()">
+            ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
             <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
             <div onclick="playSong(${index})">
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
@@ -139,13 +153,15 @@ function renderLibrary() {
         likedGrid.innerHTML = likedSongs.length ? "" : "<p style='color:gray'>No liked songs yet.</p>";
         likedSongs.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
+            const isPlaying = (currentSong === idx);
             likedGrid.innerHTML += `
-            <div class="card" 
+            <div class="card ${isPlaying ? 'playing-card' : ''}" 
                  onclick="playSong(${idx})" 
                  oncontextmenu="openContextMenu(event, ${idx})"
                  ontouchstart="handleTouchStart(event, ${idx})" 
                  ontouchend="handleTouchEnd()" 
                  ontouchmove="handleTouchEnd()">
+                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
                 <div class="like" onclick="toggleLike(event,${idx})">💙</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -159,13 +175,15 @@ function renderLibrary() {
         offline.forEach((song) => {
             const idx = songs.findIndex(s => s.file === song.file);
             const isLiked = likedSongs.some(ls => ls.file === song.file);
+            const isPlaying = (currentSong === idx);
             downloadedGrid.innerHTML += `
-            <div class="card" 
+            <div class="card ${isPlaying ? 'playing-card' : ''}" 
                  onclick="playSong(${idx})" 
                  oncontextmenu="openContextMenu(event, ${idx})"
                  ontouchstart="handleTouchStart(event, ${idx})" 
                  ontouchend="handleTouchEnd()" 
                  ontouchmove="handleTouchEnd()">
+                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
                 <div class="like" onclick="toggleLike(event,${idx})">${isLiked ? "💙" : "🤍"}</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -177,7 +195,6 @@ function renderLibrary() {
 // ========================================================
 // PLAYLIST FOLDER LOGIC
 // ========================================================
-// NEW: Enter key creates playlist
 document.getElementById("newPlaylistName").addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
         event.preventDefault();
@@ -197,7 +214,7 @@ function createNewPlaylist() {
     playlists.push({ name: name, songs: [] });
     localStorage.setItem('sky_playlists', JSON.stringify(playlists));
     input.value = "";
-    renderLibrary();
+    refreshAllGrids();
 }
 
 function openPlaylist(name) {
@@ -222,13 +239,15 @@ function renderPlaylistView() {
         if (idx !== -1) {
             const song = songs[idx];
             const isLiked = likedSongs.some(ls => ls.file === song.file);
+            const isPlaying = (currentSong === idx);
             grid.innerHTML += `
-            <div class="card" 
+            <div class="card ${isPlaying ? 'playing-card' : ''}" 
                  onclick="playSong(${idx})" 
                  oncontextmenu="openContextMenu(event, ${idx})"
                  ontouchstart="handleTouchStart(event, ${idx})" 
                  ontouchend="handleTouchEnd()" 
                  ontouchmove="handleTouchEnd()">
+                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
                 <div class="like" onclick="toggleLike(event,${idx})">${isLiked ? "💙" : "🤍"}</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -281,11 +300,7 @@ function addSongToPlaylist(playlistName) {
     }
     
     closeAddToPlaylistModal();
-    
-    if (document.getElementById("playlistView").classList.contains("active") && currentViewedPlaylist === playlistName) {
-        renderPlaylistView();
-    }
-    renderLibrary(); 
+    refreshAllGrids(); 
 }
 
 // --- SEARCH ---
@@ -298,13 +313,15 @@ function searchSongs() {
     songs.forEach((song, index) => {
         if (song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query)) {
             const isLiked = likedSongs.some(s => s.file === song.file);
+            const isPlaying = (currentSong === index);
             results.innerHTML += `
-            <div class="card" 
+            <div class="card ${isPlaying ? 'playing-card' : ''}" 
                  onclick="playSong(${index})" 
                  oncontextmenu="openContextMenu(event, ${index})"
                  ontouchstart="handleTouchStart(event, ${index})" 
                  ontouchend="handleTouchEnd()" 
                  ontouchmove="handleTouchEnd()">
+                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
                 <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
                 <div class="cover" style="background-image:url('${song.cover}')"></div>
                 <div class="title">${song.title}</div>
@@ -317,6 +334,8 @@ function searchSongs() {
 // --- ACTIONS ---
 async function playSong(index) {
     currentSong = index;
+    refreshAllGrids(); // Updates the glowing highlights instantly
+
     const song = songs[index];
     document.getElementById("player").style.display = "flex";
     document.getElementById("playerCover").src = song.cover;
@@ -344,10 +363,7 @@ function toggleLike(e, index) {
     else likedSongs.splice(exists, 1);
     
     localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
-    loadSongs();
-    renderLibrary();
-    if(document.getElementById("playlistView").classList.contains("active")) renderPlaylistView();
-    searchSongs();
+    refreshAllGrids();
 }
 
 function toggleLoop() {
@@ -356,7 +372,36 @@ function toggleLoop() {
     document.getElementById("loopBtn").classList.toggle("loop-active", isLooping);
 }
 
-// --- DOWNLOAD LOGIC ---
+// NEW: SHUFFLE FEATURE
+function toggleShuffle() {
+    isShuffle = !isShuffle;
+    document.getElementById("shuffleBtn").classList.toggle("shuffle-active", isShuffle);
+}
+
+function nextSong() {
+    if (songs.length === 0) return;
+    if (isShuffle) {
+        let rand = Math.floor(Math.random() * songs.length);
+        playSong(rand);
+    } else {
+        playSong((currentSong + 1) % songs.length);
+    }
+}
+
+function prevSong() {
+    if (songs.length === 0) return;
+    if (isShuffle) {
+        let rand = Math.floor(Math.random() * songs.length);
+        playSong(rand);
+    } else {
+        playSong((currentSong - 1 + songs.length) % songs.length);
+    }
+}
+
+
+// ========================================================
+// MOBILE DOWNLOAD LOGIC
+// ========================================================
 async function triggerOfflineSave(url) {
     const toast = document.getElementById("downloadToast");
     const text = document.getElementById("toastText");
@@ -467,10 +512,7 @@ function handleCmDelete() {
         const store = db.transaction(["offlineAudio"], "readwrite").objectStore("offlineAudio");
         store.delete(song.file);
         
-        loadSongs();
-        renderLibrary();
-        if(document.getElementById("playlistView").classList.contains("active")) renderPlaylistView();
-        searchSongs();
+        refreshAllGrids();
     });
 }
 
@@ -479,10 +521,7 @@ function saveEditedSong() {
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
     localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
-    loadSongs();
-    renderLibrary();
-    if(document.getElementById("playlistView").classList.contains("active")) renderPlaylistView();
-    searchSongs();
+    refreshAllGrids();
     closeEditModal();
 }
 
@@ -511,8 +550,14 @@ function addSong() {
     document.getElementById("songURL").value = "";
     document.getElementById("localAudio").value = "";
     
-    loadSongs();
+    refreshAllGrids();
     customAlert("Song successfully added!");
+}
+
+// NEW: HAMBURGER MENU MOBILE LOGIC
+function toggleSidebar() {
+    document.getElementById('appSidebar').classList.toggle('open');
+    document.getElementById('mobileOverlay').classList.toggle('active');
 }
 
 function showSection(id) { 
@@ -533,11 +578,15 @@ function showSection(id) {
     }
 
     if (id === 'library') renderLibrary();
+
+    // Close mobile sidebar if clicked a link
+    if (window.innerWidth <= 768) {
+        document.getElementById('appSidebar').classList.remove('open');
+        document.getElementById('mobileOverlay').classList.remove('active');
+    }
 }
 
 function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
-function nextSong() { playSong((currentSong + 1) % songs.length); }
-function prevSong() { playSong((currentSong - 1 + songs.length) % songs.length); }
 function closePlayer(event) { if(event) event.stopPropagation(); document.getElementById("player").style.display="none"; audio.pause(); }
 function shrinkPlayer() { document.getElementById("player").classList.remove("fullscreen"); }
 function expandPlayer() { document.getElementById("player").classList.add("fullscreen"); }
@@ -548,6 +597,11 @@ function scrub(e) {
     const percent = (e.clientX - rect.left) / rect.width;
     audio.currentTime = percent * audio.duration;
 }
+
+// --- VOLUME LOGIC ---
+document.getElementById('volumeSlider').addEventListener('input', (e) => {
+    audio.volume = e.target.value;
+});
 
 // --- TIME FORMATTING & UI UPDATE ---
 function formatTime(sec) {
