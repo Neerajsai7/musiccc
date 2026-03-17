@@ -62,7 +62,7 @@ let touchTimer = null;
 let currentViewedPlaylist = ""; 
 
 // ========================================================
-// NEW: AUDIO EQUALIZER LOGIC (Web Audio API)
+// AUDIO EQUALIZER LOGIC (Web Audio API)
 // ========================================================
 let audioCtx;
 let sourceNode;
@@ -90,13 +90,12 @@ function initAudioEQ() {
     highFilter.type = "highshelf";
     highFilter.frequency.value = 4000;
 
-    // Connect nodes: source -> low -> mid -> high -> speakers
     sourceNode.connect(lowFilter);
     lowFilter.connect(midFilter);
     midFilter.connect(highFilter);
     highFilter.connect(audioCtx.destination);
     
-    updateEQ(); // Apply slider values immediately
+    updateEQ(); 
 }
 
 function updateEQ() {
@@ -114,7 +113,6 @@ function updateEQ() {
     document.getElementById("eqHighVal").innerText = (high > 0 ? "+" : "") + high + " dB";
 }
 
-// Attach listeners to EQ sliders
 ['eqLow', 'eqMid', 'eqHigh'].forEach(id => {
     document.getElementById(id).addEventListener('input', updateEQ);
 });
@@ -362,7 +360,7 @@ function addSongToPlaylist(playlistName) {
 }
 
 // ========================================================
-// SEARCH LOGIC (UPDATED TO 12 RANDOM SUGGESTIONS)
+// SEARCH LOGIC
 // ========================================================
 function showRandomSearchSuggestions() {
     const results = document.getElementById("searchResults");
@@ -370,7 +368,7 @@ function showRandomSearchSuggestions() {
     results.innerHTML = "";
 
     let shuffled = [...songs].sort(() => 0.5 - Math.random());
-    let selected = shuffled.slice(0, 12); // Now grabs up to 12 random songs
+    let selected = shuffled.slice(0, 12); 
 
     selected.forEach((song) => {
         const index = songs.indexOf(song); 
@@ -443,7 +441,7 @@ async function playSong(index) {
     audio.src = blob ? (currentObjectURL = URL.createObjectURL(blob)) : song.file;
     audio.loop = isLooping;
     
-    initAudioEQ(); // Initialize EQ on first play
+    initAudioEQ(); 
     
     audio.play().then(() => {
         if (audioCtx && audioCtx.state === 'suspended') {
@@ -777,44 +775,24 @@ audio.addEventListener('timeupdate', () => {
 
 audio.addEventListener('ended', nextSong);
 
+// SWAPPED PLAY/PAUSE ICONS:
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; // Now Pause
 });
 
 audio.addEventListener('pause', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; // Now Play
 });
 
-// ========================================================
-// NEW: ADVANCED KEYBOARD SHORTCUTS
-// ========================================================
 document.addEventListener("keydown", function(event) {
     let active = document.activeElement.tagName;
-    // Don't trigger if typing in search bar or add song inputs
     if (active === "INPUT" || active === "TEXTAREA") return;
     
     if (event.code === "Space") {
         event.preventDefault();
         togglePlay();
-    } else if (event.code === "ArrowRight") {
-        event.preventDefault();
-        nextSong();
-    } else if (event.code === "ArrowLeft") {
-        event.preventDefault();
-        prevSong();
-    } else if (event.code === "ArrowUp") {
-        event.preventDefault();
-        audio.volume = Math.min(1, audio.volume + 0.1);
-        document.getElementById('volumeSlider').value = audio.volume;
-    } else if (event.code === "ArrowDown") {
-        event.preventDefault();
-        audio.volume = Math.max(0, audio.volume - 0.1);
-        document.getElementById('volumeSlider').value = audio.volume;
-    } else if (event.key.toLowerCase() === "m") {
-        event.preventDefault();
-        audio.muted = !audio.muted;
     }
 });
 
