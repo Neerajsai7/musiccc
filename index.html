@@ -456,6 +456,11 @@ button:hover {
     .sidebar h2 { display: block; margin-top: 10px; }
     .topbar { justify-content: flex-start; }
     .search { width: 100%; }
+    
+    /* NEW: Hide specific player controls on mobile when minimized */
+    .player:not(.fullscreen) .hide-on-mobile {
+        display: none !important;
+    }
 }
 </style>
 </head>
@@ -599,20 +604,21 @@ button:hover {
         </div>
         
         <div class="player-controls">
-            <button onclick="downloadCurrentSong()">
+            <button class="hide-on-mobile" onclick="downloadCurrentSong()">
                 <img src="https://files.catbox.moe/jh6nsk.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Download">
             </button>
             
-            <button id="shuffleBtn" onclick="toggleShuffle()" style="font-size: 18px; color: white;">🔀</button>
+            <button class="hide-on-mobile" id="shuffleBtn" onclick="toggleShuffle()" style="font-size: 18px; color: white;">🔀</button>
             
-            <button id="loopBtn" onclick="toggleLoop()">
+            <button class="hide-on-mobile" id="loopBtn" onclick="toggleLoop()">
                 <img src="https://files.catbox.moe/rmtk4t.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Loop">
             </button>
+            
             <button onclick="prevSong()">
                 <img src="https://files.catbox.moe/cpi835.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Previous">
             </button>
             <button onclick="togglePlay()" id="playPauseBtn">
-                <img id="playPauseIcon" src="https://files.catbox.moe/p0hffa.jpg" style="width: 28px; height: 28px; border-radius: 6px;" alt="Play">
+                <img id="playPauseIcon" src="https://files.catbox.moe/uklwfc.jpg" style="width: 28px; height: 28px; border-radius: 6px;" alt="Play">
             </button>
             <button onclick="nextSong()">
                 <img src="https://files.catbox.moe/ano0ck.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Next">
