@@ -31,7 +31,7 @@ body {
     border-right: 1px solid rgba(255, 255, 255, 0.15);
     color:white;
     padding:20px;
-    z-index: 1000; /* Kept high for mobile drawer */
+    z-index: 1000;
 }
 
 .sidebar h2 { margin-bottom:30px; }
@@ -466,8 +466,8 @@ button:hover {
         <li onclick="showSection('home')">🏠 Home</li>
         <li onclick="showSection('search')">🔎 Search</li>
         <li onclick="showSection('library')">❤️ Library</li>
-        <li onclick="showSection('addsong')">➕ Add</li>
-    </ul>
+        <li onclick="showSection('addsong')">➕ Add Song</li>
+        <li onclick="showSection('settings')">⚙️ Settings</li> </ul>
 </div>
 
 <div class="main">
@@ -532,6 +532,23 @@ button:hover {
                 <p style="color:white; font-size:13px; margin-bottom:8px;">Option 2: Upload MP3 from device</p>
                 <input type="file" id="localAudio" accept="audio/*" style="background: rgba(255,255,255,0.8); color: black;">
                 <button onclick="addSong()" style="margin-top: 15px;">Add Song</button>
+            </div>
+        </div>
+
+        <div id="settings" class="section">
+            <h2 style="color:white; margin-bottom: 20px;">Settings & Backup</h2>
+            
+            <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
+                <h3 style="color:#00f2fe; margin-bottom: 10px;">📥 Export Backup</h3>
+                <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Download a file containing all your custom songs, playlists, and likes. (Offline files are not included).</p>
+                <button onclick="exportBackup()" style="width: 100%;">Download Backup File</button>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; border: 1px solid rgba(255,255,255,0.2);">
+                <h3 style="color:#f9ca24; margin-bottom: 10px;">📤 Import Backup</h3>
+                <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Restore your library from a previously downloaded .json backup file.</p>
+                <input type="file" id="backupFileInput" accept=".json" style="background: rgba(255,255,255,0.8); color: black; border-radius: 8px; width: 100%; padding: 10px; margin-bottom: 10px;">
+                <button onclick="importBackup()" style="width: 100%;">Restore Data</button>
             </div>
         </div>
     </div>
