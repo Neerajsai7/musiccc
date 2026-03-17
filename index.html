@@ -467,7 +467,8 @@ button:hover {
         <li onclick="showSection('search')">🔎 Search</li>
         <li onclick="showSection('library')">❤️ Library</li>
         <li onclick="showSection('addsong')">➕ Add Song</li>
-        <li onclick="showSection('settings')">⚙️ Settings</li> </ul>
+        <li onclick="showSection('settings')">⚙️ Settings</li> 
+    </ul>
 </div>
 
 <div class="main">
@@ -538,6 +539,25 @@ button:hover {
         <div id="settings" class="section">
             <h2 style="color:white; margin-bottom: 20px;">Settings & Backup</h2>
             
+            <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
+                <h3 style="color:#00f2fe; margin-bottom: 10px;">🎛️ Audio Equalizer</h3>
+                <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Customize the frequency bands to tune the sound to your liking.</p>
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    <div>
+                        <label style="color:white; font-size:12px; display:flex; justify-content:space-between; margin-bottom:5px;">Bass (Low) <span id="eqLowVal">0 dB</span></label>
+                        <input type="range" id="eqLow" min="-15" max="15" value="0" class="volume-slider" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="color:white; font-size:12px; display:flex; justify-content:space-between; margin-bottom:5px;">Midrange <span id="eqMidVal">0 dB</span></label>
+                        <input type="range" id="eqMid" min="-15" max="15" value="0" class="volume-slider" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="color:white; font-size:12px; display:flex; justify-content:space-between; margin-bottom:5px;">Treble (High) <span id="eqHighVal">0 dB</span></label>
+                        <input type="range" id="eqHigh" min="-15" max="15" value="0" class="volume-slider" style="width:100%;">
+                    </div>
+                </div>
+            </div>
+
             <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
                 <h3 style="color:#00f2fe; margin-bottom: 10px;">📥 Export Backup</h3>
                 <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Download a file containing all your custom songs, playlists, and likes. (Offline files are not included).</p>
