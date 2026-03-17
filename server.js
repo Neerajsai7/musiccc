@@ -351,7 +351,6 @@ async function playSong(index) {
         document.getElementById("playerTitle").innerText = song.title;
         document.getElementById("playerArtist").innerText = song.artist;
         
-        // NEW: Media Session API (Lock Screen Controls)
         if ('mediaSession' in navigator) {
             navigator.mediaSession.metadata = new MediaMetadata({
                 title: song.title,
@@ -412,7 +411,7 @@ function prevSong() {
 }
 
 // ========================================================
-// MOBILE DOWNLOAD LOGIC
+// MOBILE DOWNLOAD LOGIC (WITH REAL-TIME PERCENTAGE)
 // ========================================================
 async function triggerOfflineSave(url) {
     const toast = document.getElementById("downloadToast");
@@ -420,11 +419,11 @@ async function triggerOfflineSave(url) {
     const spinner = document.getElementById("toastSpinner");
     
     toast.classList.remove("hidden");
-    text.innerText = "Downloading...";
-    spinner.style.display = "block";
+    spinner.style.display = "block"; // Show spinner while establishing connection
+    text.innerText = "Connecting...";
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    let timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
         let res;
@@ -442,13 +441,57 @@ async function triggerOfflineSave(url) {
             res = await fetch(backupUrl, { signal: controller.signal });
         }
 
-        clearTimeout(timeoutId); 
         if (!res || !res.ok) throw new Error("Blocked by server");
 
-        const blob = await res.blob();
+        // Connected! Hide the spinner so we can show just the percentage text
+        spinner.style.display = "none";
+        
+        const contentLength = res.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+        
+        let blob;
+
+        // If the server tells us the total size, we can read it stream chunk by chunk
+        if (total && res.body) {
+            const reader = res.body.getReader();
+            let receivedLength = 0;
+            let chunks = [];
+            
+            while(true) {
+                // Reset inactivity timeout so it doesn't fail long downloads
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                const {done, value} = await reader.read();
+                if (done) break;
+                
+                chunks.push(value);
+                receivedLength += value.length;
+                
+                // Calculate percentage and update the text instantly
+                let percent = Math.floor((receivedLength / total) * 100);
+                text.innerText = `Downloading... ${percent}%`;
+            }
+            
+            // Combine all the downloaded chunks back into a single MP3 file
+            let chunksAll = new Uint8Array(receivedLength);
+            let position = 0;
+            for(let chunk of chunks) {
+                chunksAll.set(chunk, position);
+                position += chunk.length;
+            }
+            
+            blob = new Blob([chunksAll], {type: res.headers.get('content-type') || 'audio/mpeg'});
+
+        } else {
+            // Fallback: If server hides the file size, we can't do percentage
+            text.innerText = "Downloading...";
+            blob = await res.blob();
+        }
+
+        clearTimeout(timeoutId); 
         saveSongOffline(url, blob);
         
-        spinner.style.display = "none";
         text.innerText = "✅ Saved to Library!";
         setTimeout(() => toast.classList.add("hidden"), 2000);
 
@@ -655,7 +698,7 @@ document.addEventListener("keydown", function(event) {
 });
 
 // ========================================================
-// NEW: BACKUP & RESTORE DATA
+// BACKUP & RESTORE DATA
 // ========================================================
 function exportBackup() {
     const data = {
