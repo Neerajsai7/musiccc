@@ -52,6 +52,7 @@ let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
 ];
 
 let audio = new Audio();
+audio.crossOrigin = "anonymous"; // Required for Audio Equalizer
 let currentSong = -1; 
 let isLooping = false;
 let isShuffle = false; 
@@ -59,6 +60,64 @@ let currentObjectURL = null;
 let activeContextIndex = -1;
 let touchTimer = null; 
 let currentViewedPlaylist = ""; 
+
+// ========================================================
+// NEW: AUDIO EQUALIZER LOGIC (Web Audio API)
+// ========================================================
+let audioCtx;
+let sourceNode;
+let lowFilter, midFilter, highFilter;
+
+function initAudioEQ() {
+    if (audioCtx) return; 
+    
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    sourceNode = audioCtx.createMediaElementSource(audio);
+    
+    // Bass Filter
+    lowFilter = audioCtx.createBiquadFilter();
+    lowFilter.type = "lowshelf";
+    lowFilter.frequency.value = 250; 
+    
+    // Midrange Filter
+    midFilter = audioCtx.createBiquadFilter();
+    midFilter.type = "peaking";
+    midFilter.frequency.value = 1000;
+    midFilter.Q.value = 1;
+    
+    // Treble Filter
+    highFilter = audioCtx.createBiquadFilter();
+    highFilter.type = "highshelf";
+    highFilter.frequency.value = 4000;
+
+    // Connect nodes: source -> low -> mid -> high -> speakers
+    sourceNode.connect(lowFilter);
+    lowFilter.connect(midFilter);
+    midFilter.connect(highFilter);
+    highFilter.connect(audioCtx.destination);
+    
+    updateEQ(); // Apply slider values immediately
+}
+
+function updateEQ() {
+    if (!audioCtx) return;
+    const low = parseFloat(document.getElementById("eqLow").value);
+    const mid = parseFloat(document.getElementById("eqMid").value);
+    const high = parseFloat(document.getElementById("eqHigh").value);
+    
+    lowFilter.gain.value = low;
+    midFilter.gain.value = mid;
+    highFilter.gain.value = high;
+
+    document.getElementById("eqLowVal").innerText = (low > 0 ? "+" : "") + low + " dB";
+    document.getElementById("eqMidVal").innerText = (mid > 0 ? "+" : "") + mid + " dB";
+    document.getElementById("eqHighVal").innerText = (high > 0 ? "+" : "") + high + " dB";
+}
+
+// Attach listeners to EQ sliders
+['eqLow', 'eqMid', 'eqHigh'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateEQ);
+});
 
 // ========================================================
 // CUSTOM MODALS
@@ -303,19 +362,18 @@ function addSongToPlaylist(playlistName) {
 }
 
 // ========================================================
-// SEARCH LOGIC (WITH RANDOM SUGGESTIONS)
+// SEARCH LOGIC (UPDATED TO 12 RANDOM SUGGESTIONS)
 // ========================================================
 function showRandomSearchSuggestions() {
     const results = document.getElementById("searchResults");
     if (!results) return;
     results.innerHTML = "";
 
-    // Shuffle the songs array to get random selection
     let shuffled = [...songs].sort(() => 0.5 - Math.random());
-    let selected = shuffled.slice(0, 8); // Grab up to 8 random songs
+    let selected = shuffled.slice(0, 12); // Now grabs up to 12 random songs
 
     selected.forEach((song) => {
-        const index = songs.indexOf(song); // Get original index for playing
+        const index = songs.indexOf(song); 
         const isLiked = likedSongs.some(s => s.file === song.file);
         const isPlaying = (currentSong === index);
         
@@ -339,7 +397,6 @@ function searchSongs() {
     if (!document.getElementById("search").classList.contains("active")) return;
     let query = document.getElementById("searchInput").value.toLowerCase();
     
-    // Show random 8 songs if search bar is empty
     if (query.trim() === "") {
         showRandomSearchSuggestions();
         return;
@@ -386,7 +443,13 @@ async function playSong(index) {
     audio.src = blob ? (currentObjectURL = URL.createObjectURL(blob)) : song.file;
     audio.loop = isLooping;
     
+    initAudioEQ(); // Initialize EQ on first play
+    
     audio.play().then(() => {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
         document.getElementById("playerTitle").innerText = song.title;
         document.getElementById("playerArtist").innerText = song.artist;
         
@@ -660,7 +723,6 @@ function showSection(id) {
         searchBar.style.display = "block";
         searchBar.focus(); 
         
-        // NEW: Populate random suggestions immediately if empty
         if (searchBar.value.trim() === "") {
             showRandomSearchSuggestions();
         }
@@ -725,13 +787,34 @@ audio.addEventListener('pause', () => {
     if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
 });
 
+// ========================================================
+// NEW: ADVANCED KEYBOARD SHORTCUTS
+// ========================================================
 document.addEventListener("keydown", function(event) {
     let active = document.activeElement.tagName;
+    // Don't trigger if typing in search bar or add song inputs
     if (active === "INPUT" || active === "TEXTAREA") return;
     
     if (event.code === "Space") {
         event.preventDefault();
         togglePlay();
+    } else if (event.code === "ArrowRight") {
+        event.preventDefault();
+        nextSong();
+    } else if (event.code === "ArrowLeft") {
+        event.preventDefault();
+        prevSong();
+    } else if (event.code === "ArrowUp") {
+        event.preventDefault();
+        audio.volume = Math.min(1, audio.volume + 0.1);
+        document.getElementById('volumeSlider').value = audio.volume;
+    } else if (event.code === "ArrowDown") {
+        event.preventDefault();
+        audio.volume = Math.max(0, audio.volume - 0.1);
+        document.getElementById('volumeSlider').value = audio.volume;
+    } else if (event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        audio.muted = !audio.muted;
     }
 });
 
