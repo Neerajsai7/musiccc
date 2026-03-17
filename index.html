@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SkyMusic</title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b132b">
+<link rel="apple-touch-icon" href="https://files.catbox.moe/jh6nsk.jpg">
+
 <style>
 * { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
 
@@ -670,6 +674,18 @@ button:hover {
 </div>
 
 <script src="server.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('Service Worker registered for PWA');
+      }).catch(err => {
+        console.log('Service Worker registration failed', err);
+      });
+    });
+  }
+</script>
 
 </body>
 </html>
