@@ -297,6 +297,21 @@ button:hover {
     box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
+/* NEW: Category Filter Styles */
+.filter-btn {
+    white-space: nowrap;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 30px;
+}
+.active-filter {
+    background: rgba(0, 242, 254, 0.3) !important;
+    border: 1px solid #00f2fe !important;
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.3) !important;
+}
+.category-filters::-webkit-scrollbar { height: 4px; }
+.category-filters::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
 .player-controls { display: flex; gap: 8px; align-items: center; }
 
 .player-controls button {
@@ -476,7 +491,16 @@ button:hover {
         </div>
 
         <div id="search" class="section">
-            <h2 style="color:white; margin-bottom: 20px;">Search Songs</h2>
+            <h2 style="color:white; margin-bottom: 15px;">Explore</h2>
+            
+            <div class="category-filters" style="display:flex; gap:10px; margin-bottom:25px; overflow-x:auto; padding-bottom:10px;">
+                <button class="filter-btn active-filter" onclick="setSearchFilter('All')">All</button>
+                <button class="filter-btn" onclick="setSearchFilter('Hindi')">Hindi</button>
+                <button class="filter-btn" onclick="setSearchFilter('Telugu')">Telugu</button>
+                <button class="filter-btn" onclick="setSearchFilter('Punjabi')">Punjabi</button>
+                <button class="filter-btn" onclick="setSearchFilter('English')">English</button>
+            </div>
+
             <div class="grid" id="searchResults"></div>
         </div>
 
@@ -518,6 +542,8 @@ button:hover {
                 <input id="songName" placeholder="Song Name (Required)">
                 <input id="artistName" placeholder="Artist Name">
                 <input id="coverURL" placeholder="Cover Image URL">
+                <input id="songLanguage" placeholder="Language / Genre (Optional)">
+                
                 <p style="color:white; font-size:13px; margin-bottom:8px;">Option 1: Internet MP3 URL</p>
                 <input id="songURL" placeholder="https://...">
                 <p style="color:white; font-size:14px; margin: 15px 0 10px 0; font-weight:bold;">OR</p>
@@ -664,6 +690,7 @@ button:hover {
     <div class="spinner" id="toastSpinner"></div>
     <span id="toastText">Downloading...</span>
 </div>
+
 <script src="songs.js"></script>
 <script src="server.js"></script>
 
