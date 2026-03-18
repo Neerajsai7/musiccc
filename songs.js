@@ -46,5 +46,19 @@ const defaultSongs = [
     {title: "MF Gabhru", artist: "Unknown", cover: "https://picsum.photos/200?random=8", file: "https://files.catbox.moe/bc3mcw.mp3", language: "Punjabi"},
     {title: "Pal Pal", artist: "Talwinder", cover: "https://picsum.photos/200?random=27", file: "https://files.catbox.moe/x31ls3.mp3", language: "Punjabi"},
     {title: "I Really Do", artist: "Unknown", cover: "https://picsum.photos/200?random=10", file: "https://files.catbox.moe/hs231u.mp3", language: "Punjabi"},
-    {title: "For A Reason", artist: "Unknown", cover: "https://picsum.photos/200?random=11", file: "https://files.catbox.moe/eq7c5h.mp3", language: "Punjabi"}
+    {title: "For A Reason", artist: "Unknown", cover: "https://picsum.photos/200?random=11", file: "https://files.catbox.moe/eq7c5h.mp3", language: "Punjabi"},
+
+    // --- English Songs ---
+    {title: "Shape of You", artist: "Ed Sheeran", cover: "https://picsum.photos/200?random=44", file: "https://files.catbox.moe/h6sxqt.mp3", language: "English"},
+    {title: "Believer", artist: "Imagine Dragons", cover: "https://picsum.photos/200?random=45", file: "https://files.catbox.moe/zvhemy.mp3", language: "English"},
+    {title: "Faded", artist: "Alan Walker", cover: "https://picsum.photos/200?random=46", file: "https://files.catbox.moe/9q4oau.mp3", language: "English"},
+    {title: "Love Me Like You Do", artist: "Ellie Goulding", cover: "https://picsum.photos/200?random=47", file: "https://files.catbox.moe/xryip4.mp3", language: "English"},
+    {title: "Blinding Lights", artist: "The Weeknd", cover: "https://picsum.photos/200?random=48", file: "https://files.catbox.moe/7aixbg.mp3", language: "English"},
+    {title: "Sorry (Instrumental)", artist: "Justin Bieber", cover: "https://picsum.photos/200?random=49", file: "https://files.catbox.moe/a6ua2y.mp3", language: "English"},
+    {title: "I Don't Care", artist: "Ed Sheeran & Justin Bieber", cover: "https://picsum.photos/200?random=50", file: "https://files.catbox.moe/6psg3z.mp3", language: "English"},
+    {title: "Montero (Call Me By Your Name)", artist: "Lil Nas X", cover: "https://picsum.photos/200?random=51", file: "https://files.catbox.moe/qtycw9.mp3", language: "English"},
+    {title: "Closer", artist: "The Chainsmokers", cover: "https://picsum.photos/200?random=52", file: "https://files.catbox.moe/utqgb3.mp3", language: "English"},
+    {title: "Bones", artist: "Imagine Dragons", cover: "https://picsum.photos/200?random=53", file: "https://files.catbox.moe/p7r6di.mp3", language: "English"},
+    {title: "Night Changes", artist: "One Direction", cover: "https://picsum.photos/200?random=54", file: "https://files.catbox.moe/86w14g.mp3", language: "English"},
+    {title: "Middle of the Night", artist: "Elley Duhé", cover: "https://picsum.photos/200?random=55", file: "https://files.catbox.moe/43uyau.mp3", language: "English"}
 ];
