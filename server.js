@@ -48,7 +48,6 @@ if (typeof defaultSongs !== 'undefined') {
         if (!existing) {
             savedSongs.push(ds);
         } else {
-            // ALWAYS update the info if you changed it in songs.js
             existing.language = ds.language;
             existing.title = ds.title;
             existing.artist = ds.artist;
@@ -72,7 +71,10 @@ let currentViewedPlaylist = "";
 
 let currentPlaybackQueue = [];
 let currentQueueContext = 'all';
+
+// Track stable random indices for UI refreshes
 let homeScreenIndices = [];
+let searchScreenIndices = [];
 
 // Search State
 let currentSearchFilter = 'All';
@@ -403,7 +405,7 @@ function addSongToPlaylist(playlistName) {
 }
 
 // ========================================================
-// SEARCH LOGIC & LANGUAGE FILTERS
+// SEARCH LOGIC & LANGUAGE FILTERS (WITH STABLE RANDOM)
 // ========================================================
 function setSearchFilter(lang) {
     currentSearchFilter = lang;
@@ -414,19 +416,29 @@ function setSearchFilter(lang) {
     searchSongs(); 
 }
 
+// NEW: Separated the generation of randoms from the displaying of randoms
+function generateSearchRecommendations() {
+    let indices = songs.map((_, i) => i);
+    indices.sort(() => 0.5 - Math.random());
+    searchScreenIndices = indices.slice(0, 12);
+}
+
 function showRandomSearchSuggestions() {
     const results = document.getElementById("searchResults");
     if (!results) return;
     results.innerHTML = "";
 
-    let shuffled = [...songs].sort(() => 0.5 - Math.random());
-    let selected = shuffled.slice(0, 12); 
+    // If we somehow don't have randoms, generate them
+    if (searchScreenIndices.length === 0) {
+        generateSearchRecommendations();
+    }
     
     currentQueueContext = 'search';
-    currentPlaybackQueue = selected.map(s => songs.indexOf(s));
+    currentPlaybackQueue = [...searchScreenIndices];
 
-    selected.forEach((song) => {
-        const index = songs.indexOf(song); 
+    searchScreenIndices.forEach((index) => {
+        const song = songs[index];
+        if (!song) return;
         const isLiked = likedSongs.some(s => s.file === song.file);
         const isPlaying = (currentSong === index);
         
@@ -512,7 +524,7 @@ async function playSong(index, context = null) {
     }
 
     currentSong = index;
-    refreshAllGrids(); 
+    refreshAllGrids(); // Redraws UI with playing indicator
 
     const song = songs[index];
     document.getElementById("player").style.display = "flex";
@@ -846,6 +858,8 @@ function showSection(id) {
         searchBar.focus(); 
         
         if (searchBar.value.trim() === "" && currentSearchFilter === 'All') {
+            // NEW: Only generate new randoms when the tab is first clicked!
+            generateSearchRecommendations();
             showRandomSearchSuggestions();
         } else {
             searchSongs();
@@ -907,12 +921,12 @@ audio.addEventListener('ended', nextSong);
 
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
 });
 
 audio.addEventListener('pause', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
 });
 
 document.addEventListener("keydown", function(event) {
@@ -990,4 +1004,5 @@ function importBackup() {
 
 // Initialize App
 generateHomeRecommendations();
+generateSearchRecommendations();
 loadSongs();
