@@ -36,20 +36,21 @@ function getOfflineSong(url) {
     });
 }
 
-// --- DATA & STATE ---
-let songs = JSON.parse(localStorage.getItem('sky_songs_v2')) || [
-    {title: "Kesariya (Hindi)", artist: "Brahmāstra", cover: "https://picsum.photos/200?random=1", file: "https://files.catbox.moe/mn42vj.mp3"},
-    {title: "Boyfriend", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=2", file: "https://files.catbox.moe/fcllvp.mp3"},
-    {title: "Bulleya", artist: "Sultan", cover: "https://picsum.photos/200?random=3", file: "https://files.catbox.moe/195dty.mp3"},
-    {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3"},
-    {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3"},
-    {title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=6", file: "https://files.catbox.moe/y0df1k.mp3"},
-    {title: "Aari Aari", artist: "Dhurandhar-2", cover: "https://picsum.photos/200?random=7", file: "https://files.catbox.moe/4a3svo.mp3"},
-    {title: "MF Gabhru", artist: "Unknown", cover: "https://picsum.photos/200?random=8", file: "https://files.catbox.moe/bc3mcw.mp3"},
-    {title: "You Are You Though", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=9", file: "https://files.catbox.moe/hcselx.mp3"},
-    {title: "I Really Do", artist: "Unknown", cover: "https://picsum.photos/200?random=10", file: "https://files.catbox.moe/hs231u.mp3"},
-    {title: "For A Reason", artist: "Unknown", cover: "https://picsum.photos/200?random=11", file: "https://files.catbox.moe/eq7c5h.mp3"}
-];
+// ========================================================
+// DATA & STATE (DYNAMIC SYNC FROM SONGS.JS)
+// ========================================================
+let savedSongs = JSON.parse(localStorage.getItem('sky_songs_v3')) || [];
+
+// Merge logic: Automatically pull any new songs added to songs.js
+if (typeof defaultSongs !== 'undefined') {
+    defaultSongs.forEach(ds => {
+        if (!savedSongs.some(ss => ss.file === ds.file)) {
+            savedSongs.push(ds);
+        }
+    });
+}
+let songs = savedSongs;
+localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
 
 let audio = new Audio();
 audio.crossOrigin = "anonymous"; 
@@ -61,7 +62,6 @@ let activeContextIndex = -1;
 let touchTimer = null; 
 let currentViewedPlaylist = ""; 
 
-// NEW: CONTEXTUAL PLAYBACK STATE
 let currentPlaybackQueue = [];
 let currentQueueContext = 'all';
 
@@ -151,7 +151,6 @@ document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
 // ========================================================
 // QUEUE BUILDING & RENDERING
 // ========================================================
-// NEW: Contextual Playback. Next/Prev stays within the folder you played from!
 function buildQueue(context) {
     currentPlaybackQueue = [];
     if (context === 'home') {
@@ -405,7 +404,6 @@ function showRandomSearchSuggestions() {
     let shuffled = [...songs].sort(() => 0.5 - Math.random());
     let selected = shuffled.slice(0, 12); 
     
-    // Set up queue context instantly for random suggestions
     currentQueueContext = 'random_search';
     currentPlaybackQueue = selected.map(s => songs.indexOf(s));
 
@@ -465,14 +463,13 @@ function searchSongs() {
 
 // --- ACTIONS ---
 async function playSong(index, context = null) {
-    // 1. Manage the playback queue context
     if (context) {
         currentQueueContext = context;
         if (context !== 'random_search') {
             buildQueue(context);
         }
     } else if (currentPlaybackQueue.length === 0) {
-        buildQueue('all'); // Fail-safe
+        buildQueue('all'); 
     }
 
     currentSong = index;
@@ -539,7 +536,6 @@ function toggleShuffle() {
     document.getElementById("shuffleBtn").classList.toggle("shuffle-active", isShuffle);
 }
 
-// Context-aware Next and Previous
 function nextSong() {
     if (currentPlaybackQueue.length === 0) return;
     let queueIdx = currentPlaybackQueue.indexOf(currentSong);
@@ -547,7 +543,7 @@ function nextSong() {
 
     if (isShuffle) {
         let rand = Math.floor(Math.random() * currentPlaybackQueue.length);
-        playSong(currentPlaybackQueue[rand]); // Continues using same queue
+        playSong(currentPlaybackQueue[rand]); 
     } else {
         let nextQueueIdx = (queueIdx + 1) % currentPlaybackQueue.length;
         playSong(currentPlaybackQueue[nextQueueIdx]);
@@ -569,7 +565,7 @@ function prevSong() {
 }
 
 // ========================================================
-// MOBILE DOWNLOAD LOGIC (WITH REAL-TIME PERCENTAGE)
+// MOBILE DOWNLOAD LOGIC 
 // ========================================================
 async function triggerOfflineSave(url) {
     const toast = document.getElementById("downloadToast");
@@ -684,7 +680,6 @@ function openContextMenu(e, index) {
     menu.style.left = x + "px";
     menu.style.top = y + "px";
 
-    // Toggle Download vs Remove Download based on status
     const song = songs[index];
     const isDownloaded = downloadedURLs.includes(song.file) || song.file.startsWith("local_");
     
@@ -707,7 +702,6 @@ document.addEventListener("click", () => {
 
 function handleCmDownload() { triggerOfflineSave(songs[activeContextIndex].file); }
 
-// NEW: REMOVE DOWNLOAD FUNCTION
 function handleCmRemoveDownload() {
     const song = songs[activeContextIndex];
     customConfirm("Remove this song from offline downloads?", () => {
@@ -732,7 +726,7 @@ function handleCmEdit() {
 }
 
 function handleCmDelete() {
-    customConfirm("Are you sure you want to delete this song permanently?", () => {
+    customConfirm("Are you sure you want to delete this song permanently?\n(Note: Base library songs will return on refresh. To permanently delete base songs, remove them from songs.js)", () => {
         const song = songs[activeContextIndex];
         songs.splice(activeContextIndex, 1);
         likedSongs = likedSongs.filter(ls => ls.file !== song.file);
@@ -742,7 +736,7 @@ function handleCmDelete() {
             p.songs = p.songs.filter(f => f !== song.file);
         });
         
-        localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
+        localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
         localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
         localStorage.setItem('sky_playlists', JSON.stringify(playlists));
@@ -758,7 +752,7 @@ function saveEditedSong() {
     songs[activeContextIndex].title = document.getElementById("editTitleInput").value;
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
-    localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
+    localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
     refreshAllGrids();
     closeEditModal();
 }
@@ -780,7 +774,7 @@ function addSong() {
     }
 
     songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
-    localStorage.setItem('sky_songs_v2', JSON.stringify(songs));
+    localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
     
     document.getElementById("songName").value = "";
     document.getElementById("artistName").value = "";
@@ -906,7 +900,7 @@ document.addEventListener("keydown", function(event) {
 // ========================================================
 function exportBackup() {
     const data = {
-        songs: JSON.parse(localStorage.getItem('sky_songs_v2')) || songs,
+        songs: JSON.parse(localStorage.getItem('sky_songs_v3')) || songs,
         liked: JSON.parse(localStorage.getItem('likedSongs')) || [],
         downloads: JSON.parse(localStorage.getItem('downloadedURLs')) || [],
         playlists: JSON.parse(localStorage.getItem('sky_playlists')) || []
@@ -932,7 +926,7 @@ function importBackup() {
         try {
             const data = JSON.parse(e.target.result);
             
-            if(data.songs) localStorage.setItem('sky_songs_v2', JSON.stringify(data.songs));
+            if(data.songs) localStorage.setItem('sky_songs_v3', JSON.stringify(data.songs));
             if(data.liked) localStorage.setItem('likedSongs', JSON.stringify(data.liked));
             if(data.downloads) localStorage.setItem('downloadedURLs', JSON.stringify(data.downloads));
             if(data.playlists) localStorage.setItem('sky_playlists', JSON.stringify(data.playlists));
