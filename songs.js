@@ -3,6 +3,8 @@ const defaultSongs = [
     // --- Hindi Songs ---
     {title: "Kesariya", artist: "Brahmāstra", cover: "https://picsum.photos/200?random=1", file: "https://files.catbox.moe/mn42vj.mp3", language: "Hindi"},
     {title: "Bulleya", artist: "Sultan", cover: "https://picsum.photos/200?random=3", file: "https://files.catbox.moe/195dty.mp3", language: "Hindi"},
+    {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3", language: "Hindi"},
+    {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3", language: "Hindi"},
     {title: "Aari Aari", artist: "Dhurandhar-2", cover: "https://picsum.photos/200?random=7", file: "https://files.catbox.moe/4a3svo.mp3", language: "Hindi"},
     {title: "Monica", artist: "Unknown", cover: "https://picsum.photos/200?random=12", file: "https://files.catbox.moe/xcon2x.mp3", language: "Hindi"},
     {title: "Saari Dunia Jala Denge", artist: "Unknown", cover: "https://picsum.photos/200?random=13", file: "https://files.catbox.moe/gdvpfj.mp3", language: "Hindi"},
@@ -23,6 +25,18 @@ const defaultSongs = [
     {title: "Ishq Jalakar", artist: "Unknown", cover: "https://picsum.photos/200?random=30", file: "https://files.catbox.moe/9xumb2.mp3", language: "Hindi"},
     {title: "Gehra Hua", artist: "Unknown", cover: "https://picsum.photos/200?random=31", file: "https://files.catbox.moe/kzlz70.mp3", language: "Hindi"},
     {title: "Laagi Re Lagan", artist: "Unknown", cover: "https://picsum.photos/200?random=32", file: "https://files.catbox.moe/n9qgtq.mp3", language: "Hindi"},
+    
+    // --- NEW Hindi Songs ---
+    {title: "Sajni", artist: "Unknown", cover: "https://picsum.photos/200?random=56", file: "https://files.catbox.moe/hfm9am.mp3", language: "Hindi"},
+    {title: "Tum Hi Ho Bandhu", artist: "Unknown", cover: "https://picsum.photos/200?random=57", file: "https://files.catbox.moe/zmazmr.mp3", language: "Hindi"},
+    {title: "Afghan Jalebi", artist: "Unknown", cover: "https://picsum.photos/200?random=58", file: "https://files.catbox.moe/3i5xoa.mp3", language: "Hindi"},
+    {title: "The Breakup Song", artist: "Unknown", cover: "https://picsum.photos/200?random=59", file: "https://files.catbox.moe/p61ka4.mp3", language: "Hindi"},
+    {title: "Prem Ki Naiyya", artist: "Unknown", cover: "https://picsum.photos/200?random=60", file: "https://files.catbox.moe/30r8rn.mp3", language: "Hindi"},
+    {title: "Balam Pichkari", artist: "Unknown", cover: "https://picsum.photos/200?random=61", file: "https://files.catbox.moe/alyd6g.mp3", language: "Hindi"},
+    {title: "Vele", artist: "Unknown", cover: "https://picsum.photos/200?random=62", file: "https://files.catbox.moe/bvalgp.mp3", language: "Hindi"},
+    {title: "Tu Meri", artist: "Unknown", cover: "https://picsum.photos/200?random=63", file: "https://files.catbox.moe/j8ghay.mp3", language: "Hindi"},
+    {title: "Bang Bang", artist: "Unknown", cover: "https://picsum.photos/200?random=64", file: "https://files.catbox.moe/c49jkx.mp3", language: "Hindi"},
+    {title: "Khairiyat", artist: "Unknown", cover: "https://picsum.photos/200?random=65", file: "https://files.catbox.moe/ua2m9s.mp3", language: "Hindi"},
 
     // --- Telugu / South Songs ---
     {title: "Thalapathy Kacheri", artist: "Unknown", cover: "https://picsum.photos/200?random=26", file: "https://files.catbox.moe/l6shmk.mp3", language: "Telugu"},
@@ -37,9 +51,6 @@ const defaultSongs = [
     {title: "Nenu Nuvvantu", artist: "Unknown", cover: "https://picsum.photos/200?random=41", file: "https://files.catbox.moe/gvglj1.mp3", language: "Telugu"},
     {title: "Rooba Rooba", artist: "Unknown", cover: "https://picsum.photos/200?random=42", file: "https://files.catbox.moe/n86g5c.mp3", language: "Telugu"},
     {title: "O Range", artist: "Unknown", cover: "https://picsum.photos/200?random=43", file: "https://files.catbox.moe/1v6ctl.mp3", language: "Telugu"},
-    {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3", language: "Telugu"},
-    {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3", language: "Telugu"}, 
-
 
     // --- Punjabi Songs ---
     {title: "Boyfriend", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=2", file: "https://files.catbox.moe/fcllvp.mp3", language: "Punjabi"},
