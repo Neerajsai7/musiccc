@@ -3,8 +3,8 @@ const defaultSongs = [
     // --- Hindi Songs ---
     {title: "Kesariya", artist: "Brahmāstra", cover: "https://picsum.photos/200?random=1", file: "https://files.catbox.moe/mn42vj.mp3", language: "Hindi"},
     {title: "Bulleya", artist: "Sultan", cover: "https://picsum.photos/200?random=3", file: "https://files.catbox.moe/195dty.mp3", language: "Hindi"},
-    {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3", language: "Hindi"},
-    {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3", language: "Hindi"},
+    {title: "Tabaahi", artist: "Toxic", cover: "https://picsum.photos/200?random=4", file: "https://files.catbox.moe/m37ohm.mp3", language: "Telugu"},
+    {title: "Rai Rai Raa Raa", artist: "Toxic", cover: "https://picsum.photos/200?random=5", file: "https://files.catbox.moe/no3t0i.mp3", language: "Telugu"},
     {title: "Aari Aari", artist: "Dhurandhar-2", cover: "https://picsum.photos/200?random=7", file: "https://files.catbox.moe/4a3svo.mp3", language: "Hindi"},
     {title: "Monica", artist: "Unknown", cover: "https://picsum.photos/200?random=12", file: "https://files.catbox.moe/xcon2x.mp3", language: "Hindi"},
     {title: "Saari Dunia Jala Denge", artist: "Unknown", cover: "https://picsum.photos/200?random=13", file: "https://files.catbox.moe/gdvpfj.mp3", language: "Hindi"},
