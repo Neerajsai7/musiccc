@@ -37,20 +37,24 @@ function getOfflineSong(url) {
 }
 
 // ========================================================
-// DATA & STATE (DYNAMIC SYNC FROM SONGS.JS)
+// DATA & STATE (SMART SYNC)
 // ========================================================
-let savedSongs = JSON.parse(localStorage.getItem('sky_songs_v3')) || [];
+let savedSongs = JSON.parse(localStorage.getItem('sky_songs_v4')) || [];
 
-// Merge logic: Automatically pull any new songs added to songs.js
+// Smart Merge: Adds new songs AND patches missing language tags to old ones
 if (typeof defaultSongs !== 'undefined') {
     defaultSongs.forEach(ds => {
-        if (!savedSongs.some(ss => ss.file === ds.file)) {
+        let existing = savedSongs.find(ss => ss.file === ds.file);
+        if (!existing) {
             savedSongs.push(ds);
+        } else if (ds.language && !existing.language) {
+            existing.language = ds.language; // Patch language
         }
     });
 }
+
 let songs = savedSongs;
-localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
+localStorage.setItem('sky_songs_v4', JSON.stringify(songs));
 
 let audio = new Audio();
 audio.crossOrigin = "anonymous"; 
@@ -64,9 +68,10 @@ let currentViewedPlaylist = "";
 
 let currentPlaybackQueue = [];
 let currentQueueContext = 'all';
-
-// NEW: Store the current random home screen songs
 let homeScreenIndices = [];
+
+// NEW: Search State
+let currentSearchFilter = 'All';
 
 // ========================================================
 // AUDIO EQUALIZER LOGIC (Web Audio API)
@@ -154,7 +159,6 @@ document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
 // ========================================================
 // QUEUE BUILDING & RENDERING
 // ========================================================
-// NEW: Generate 6 Random Songs for the Home Screen
 function generateHomeRecommendations() {
     let indices = songs.map((_, i) => i);
     indices.sort(() => 0.5 - Math.random());
@@ -182,13 +186,6 @@ function buildQueue(context) {
                 if (idx > -1) currentPlaybackQueue.push(idx);
             });
         }
-    } else if (context === 'search') {
-        let query = document.getElementById("searchInput").value.toLowerCase();
-        songs.forEach((s, idx) => {
-            if (s.title.toLowerCase().includes(query) || s.artist.toLowerCase().includes(query)) {
-                currentPlaybackQueue.push(idx);
-            }
-        });
     } else if (context === 'all') {
         currentPlaybackQueue = songs.map((s, i) => i);
     }
@@ -208,7 +205,6 @@ function loadSongs() {
     if (!grid) return;
     grid.innerHTML = "";
     
-    // Load based on the randomly generated home screen indices
     homeScreenIndices.forEach((index) => {
         const song = songs[index];
         if (!song) return;
@@ -403,8 +399,17 @@ function addSongToPlaylist(playlistName) {
 }
 
 // ========================================================
-// SEARCH LOGIC 
+// SEARCH LOGIC & LANGUAGE FILTERS
 // ========================================================
+function setSearchFilter(lang) {
+    currentSearchFilter = lang;
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        if(btn.innerText === lang) btn.classList.add('active-filter');
+        else btn.classList.remove('active-filter');
+    });
+    searchSongs(); // Re-trigger search with new filter
+}
+
 function showRandomSearchSuggestions() {
     const results = document.getElementById("searchResults");
     if (!results) return;
@@ -413,7 +418,7 @@ function showRandomSearchSuggestions() {
     let shuffled = [...songs].sort(() => 0.5 - Math.random());
     let selected = shuffled.slice(0, 12); 
     
-    currentQueueContext = 'random_search';
+    currentQueueContext = 'search';
     currentPlaybackQueue = selected.map(s => songs.indexOf(s));
 
     selected.forEach((song) => {
@@ -423,7 +428,7 @@ function showRandomSearchSuggestions() {
         
         results.innerHTML += `
         <div class="card ${isPlaying ? 'playing-card' : ''}" 
-             onclick="playSong(${index}, 'random_search')" 
+             onclick="playSong(${index}, 'search')" 
              oncontextmenu="openContextMenu(event, ${index})"
              ontouchstart="handleTouchStart(event, ${index})" 
              ontouchend="handleTouchEnd()" 
@@ -441,7 +446,7 @@ function searchSongs() {
     if (!document.getElementById("search").classList.contains("active")) return;
     let query = document.getElementById("searchInput").value.toLowerCase();
     
-    if (query.trim() === "") {
+    if (query.trim() === "" && currentSearchFilter === 'All') {
         showRandomSearchSuggestions();
         return;
     }
@@ -449,24 +454,45 @@ function searchSongs() {
     let results = document.getElementById("searchResults");
     results.innerHTML = "";
     
+    let filteredIndices = [];
+    
     songs.forEach((song, index) => {
-        if (song.title.toLowerCase().includes(query) || song.artist.toLowerCase().includes(query)) {
-            const isLiked = likedSongs.some(s => s.file === song.file);
-            const isPlaying = (currentSong === index);
-            results.innerHTML += `
-            <div class="card ${isPlaying ? 'playing-card' : ''}" 
-                 onclick="playSong(${index}, 'search')" 
-                 oncontextmenu="openContextMenu(event, ${index})"
-                 ontouchstart="handleTouchStart(event, ${index})" 
-                 ontouchend="handleTouchEnd()" 
-                 ontouchmove="handleTouchEnd()">
-                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
-                <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
-                <div class="cover" style="background-image:url('${song.cover}')"></div>
-                <div class="title">${song.title}</div>
-                <div class="artist">${song.artist}</div>
-            </div>`;
+        let matchesFilter = (currentSearchFilter === 'All') || (song.language === currentSearchFilter);
+        
+        let matchesQuery = song.title.toLowerCase().includes(query) || 
+                           song.artist.toLowerCase().includes(query) || 
+                           (song.language && song.language.toLowerCase().includes(query));
+                           
+        if (matchesFilter && matchesQuery) {
+            filteredIndices.push(index);
         }
+    });
+
+    currentQueueContext = 'search';
+    currentPlaybackQueue = [...filteredIndices];
+
+    if (filteredIndices.length === 0) {
+        results.innerHTML = `<p style="color:gray; width:100%;">No songs found for this filter/search.</p>`;
+        return;
+    }
+
+    filteredIndices.forEach((index) => {
+        const song = songs[index];
+        const isLiked = likedSongs.some(s => s.file === song.file);
+        const isPlaying = (currentSong === index);
+        results.innerHTML += `
+        <div class="card ${isPlaying ? 'playing-card' : ''}" 
+             onclick="playSong(${index}, 'search')" 
+             oncontextmenu="openContextMenu(event, ${index})"
+             ontouchstart="handleTouchStart(event, ${index})" 
+             ontouchend="handleTouchEnd()" 
+             ontouchmove="handleTouchEnd()">
+            ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
+            <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
+            <div class="cover" style="background-image:url('${song.cover}')"></div>
+            <div class="title">${song.title}</div>
+            <div class="artist">${song.artist}</div>
+        </div>`;
     });
 }
 
@@ -474,7 +500,7 @@ function searchSongs() {
 async function playSong(index, context = null) {
     if (context) {
         currentQueueContext = context;
-        if (context !== 'random_search') {
+        if (context !== 'search') {
             buildQueue(context);
         }
     } else if (currentPlaybackQueue.length === 0) {
@@ -745,7 +771,7 @@ function handleCmDelete() {
             p.songs = p.songs.filter(f => f !== song.file);
         });
         
-        localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
+        localStorage.setItem('sky_songs_v4', JSON.stringify(songs));
         localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
         localStorage.setItem('sky_playlists', JSON.stringify(playlists));
@@ -761,7 +787,7 @@ function saveEditedSong() {
     songs[activeContextIndex].title = document.getElementById("editTitleInput").value;
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
-    localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
+    localStorage.setItem('sky_songs_v4', JSON.stringify(songs));
     refreshAllGrids();
     closeEditModal();
 }
@@ -772,6 +798,7 @@ function addSong() {
     const artist = document.getElementById("artistName").value || "Unknown";
     const cover = document.getElementById("coverURL").value || "https://picsum.photos/200";
     const url = document.getElementById("songURL").value;
+    const lang = document.getElementById("songLanguage").value || "Other";
     const fileInput = document.getElementById("localAudio").files[0];
 
     if (!name) return customAlert("Please enter a song name.");
@@ -782,13 +809,14 @@ function addSong() {
         saveSongOffline(finalFile, fileInput);
     }
 
-    songs.push({ title: name, artist: artist, cover: cover, file: finalFile });
-    localStorage.setItem('sky_songs_v3', JSON.stringify(songs));
+    songs.push({ title: name, artist: artist, cover: cover, file: finalFile, language: lang });
+    localStorage.setItem('sky_songs_v4', JSON.stringify(songs));
     
     document.getElementById("songName").value = "";
     document.getElementById("artistName").value = "";
     document.getElementById("coverURL").value = "";
     document.getElementById("songURL").value = "";
+    document.getElementById("songLanguage").value = "";
     document.getElementById("localAudio").value = "";
     
     refreshAllGrids();
@@ -813,8 +841,10 @@ function showSection(id) {
         searchBar.style.display = "block";
         searchBar.focus(); 
         
-        if (searchBar.value.trim() === "") {
+        if (searchBar.value.trim() === "" && currentSearchFilter === 'All') {
             showRandomSearchSuggestions();
+        } else {
+            searchSongs();
         }
     } else {
         searchBar.style.display = "none";
@@ -913,7 +943,7 @@ document.addEventListener("keydown", function(event) {
 // ========================================================
 function exportBackup() {
     const data = {
-        songs: JSON.parse(localStorage.getItem('sky_songs_v3')) || songs,
+        songs: JSON.parse(localStorage.getItem('sky_songs_v4')) || songs,
         liked: JSON.parse(localStorage.getItem('likedSongs')) || [],
         downloads: JSON.parse(localStorage.getItem('downloadedURLs')) || [],
         playlists: JSON.parse(localStorage.getItem('sky_playlists')) || []
@@ -939,7 +969,7 @@ function importBackup() {
         try {
             const data = JSON.parse(e.target.result);
             
-            if(data.songs) localStorage.setItem('sky_songs_v3', JSON.stringify(data.songs));
+            if(data.songs) localStorage.setItem('sky_songs_v4', JSON.stringify(data.songs));
             if(data.liked) localStorage.setItem('likedSongs', JSON.stringify(data.liked));
             if(data.downloads) localStorage.setItem('downloadedURLs', JSON.stringify(data.downloads));
             if(data.playlists) localStorage.setItem('sky_playlists', JSON.stringify(data.playlists));
