@@ -65,6 +65,9 @@ let currentViewedPlaylist = "";
 let currentPlaybackQueue = [];
 let currentQueueContext = 'all';
 
+// NEW: Store the current random home screen songs
+let homeScreenIndices = [];
+
 // ========================================================
 // AUDIO EQUALIZER LOGIC (Web Audio API)
 // ========================================================
@@ -151,10 +154,17 @@ document.getElementById("customConfirmYesBtn").addEventListener("click", () => {
 // ========================================================
 // QUEUE BUILDING & RENDERING
 // ========================================================
+// NEW: Generate 6 Random Songs for the Home Screen
+function generateHomeRecommendations() {
+    let indices = songs.map((_, i) => i);
+    indices.sort(() => 0.5 - Math.random());
+    homeScreenIndices = indices.slice(0, 6);
+}
+
 function buildQueue(context) {
     currentPlaybackQueue = [];
     if (context === 'home') {
-        for (let i = 0; i < Math.min(6, songs.length); i++) currentPlaybackQueue.push(i);
+        currentPlaybackQueue = [...homeScreenIndices];
     } else if (context === 'liked') {
         likedSongs.forEach(ls => {
             let idx = songs.findIndex(s => s.file === ls.file);
@@ -198,28 +208,27 @@ function loadSongs() {
     if (!grid) return;
     grid.innerHTML = "";
     
-    for (let index = 0; index < songs.length; index++) {
-        if (index >= 6) break; 
-        
+    // Load based on the randomly generated home screen indices
+    homeScreenIndices.forEach((index) => {
         const song = songs[index];
+        if (!song) return;
         const isLiked = likedSongs.some(s => s.file === song.file);
         const isPlaying = (currentSong === index);
         
         grid.innerHTML += `
         <div class="card ${isPlaying ? 'playing-card' : ''}" 
+             onclick="playSong(${index}, 'home')" 
              oncontextmenu="openContextMenu(event, ${index})" 
              ontouchstart="handleTouchStart(event, ${index})" 
              ontouchend="handleTouchEnd()" 
              ontouchmove="handleTouchEnd()">
             ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
             <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
-            <div onclick="playSong(${index}, 'home')">
-                <div class="cover" style="background-image:url('${song.cover}')"></div>
-                <div class="title">${song.title}</div>
-                <div class="artist">${song.artist}</div>
-            </div>
+            <div class="cover" style="background-image:url('${song.cover}')"></div>
+            <div class="title">${song.title}</div>
+            <div class="artist">${song.artist}</div>
         </div>`;
-    }
+    });
 }
 
 function renderLibrary() {
@@ -812,7 +821,11 @@ function showSection(id) {
         searchBar.value = ""; 
     }
 
-    if (id === 'library') renderLibrary();
+    if (id === 'home') {
+        generateHomeRecommendations();
+    }
+
+    if (id === 'library' || id === 'home') refreshAllGrids();
 
     if (window.innerWidth <= 768) {
         document.getElementById('appSidebar').classList.remove('open');
@@ -860,12 +873,12 @@ audio.addEventListener('ended', nextSong);
 
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
 });
 
 audio.addEventListener('pause', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
 });
 
 document.addEventListener("keydown", function(event) {
@@ -942,4 +955,5 @@ function importBackup() {
 }
 
 // Initialize App
+generateHomeRecommendations();
 loadSongs();
