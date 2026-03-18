@@ -41,14 +41,18 @@ function getOfflineSong(url) {
 // ========================================================
 let savedSongs = JSON.parse(localStorage.getItem('sky_songs_v4')) || [];
 
-// Smart Merge: Adds new songs AND patches missing language tags to old ones
+// Smart Merge: Makes songs.js the absolute boss for default songs!
 if (typeof defaultSongs !== 'undefined') {
     defaultSongs.forEach(ds => {
         let existing = savedSongs.find(ss => ss.file === ds.file);
         if (!existing) {
             savedSongs.push(ds);
-        } else if (ds.language && !existing.language) {
-            existing.language = ds.language; // Patch language
+        } else {
+            // ALWAYS update the info if you changed it in songs.js
+            existing.language = ds.language;
+            existing.title = ds.title;
+            existing.artist = ds.artist;
+            existing.cover = ds.cover;
         }
     });
 }
@@ -70,7 +74,7 @@ let currentPlaybackQueue = [];
 let currentQueueContext = 'all';
 let homeScreenIndices = [];
 
-// NEW: Search State
+// Search State
 let currentSearchFilter = 'All';
 
 // ========================================================
@@ -407,7 +411,7 @@ function setSearchFilter(lang) {
         if(btn.innerText === lang) btn.classList.add('active-filter');
         else btn.classList.remove('active-filter');
     });
-    searchSongs(); // Re-trigger search with new filter
+    searchSongs(); 
 }
 
 function showRandomSearchSuggestions() {
@@ -903,12 +907,12 @@ audio.addEventListener('ended', nextSong);
 
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
 });
 
 audio.addEventListener('pause', () => {
     const icon = document.getElementById("playPauseIcon");
-    if (icon) icon.src = "https://files.catbox.moe/p0hffa.jpg"; 
+    if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
 });
 
 document.addEventListener("keydown", function(event) {
