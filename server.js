@@ -1,9 +1,22 @@
+// --- LOAD THEME BEFORE ANYTHING ELSE ---
+let currentTheme = localStorage.getItem('sky_theme') || '#00f2fe';
+document.documentElement.style.setProperty('--accent', currentTheme);
+
+function changeTheme(color) {
+    currentTheme = color;
+    document.documentElement.style.setProperty('--accent', color);
+    localStorage.setItem('sky_theme', color);
+}
+
 // --- DATABASE (IndexedDB) ---
 let db;
 const request = indexedDB.open("SkyMusicDB", 1);
 let downloadedURLs = JSON.parse(localStorage.getItem('downloadedURLs')) || [];
 let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
 let playlists = JSON.parse(localStorage.getItem('sky_playlists')) || [];
+
+// NEW: RECENTLY PLAYED ARRAY
+let recentHistory = JSON.parse(localStorage.getItem('sky_recent')) || [];
 
 request.onupgradeneeded = (e) => {
     db = e.target.result;
@@ -41,7 +54,6 @@ function getOfflineSong(url) {
 // ========================================================
 let savedSongs = JSON.parse(localStorage.getItem('sky_songs_v4')) || [];
 
-// Smart Merge: Makes songs.js the absolute boss for default songs!
 if (typeof defaultSongs !== 'undefined') {
     defaultSongs.forEach(ds => {
         let existing = savedSongs.find(ss => ss.file === ds.file);
@@ -52,6 +64,7 @@ if (typeof defaultSongs !== 'undefined') {
             existing.title = ds.title;
             existing.artist = ds.artist;
             existing.cover = ds.cover;
+            existing.lyrics = ds.lyrics; // Sync lyrics from songs.js too!
         }
     });
 }
@@ -71,20 +84,19 @@ let currentViewedPlaylist = "";
 
 let currentPlaybackQueue = [];
 let currentQueueContext = 'all';
-
-// Track stable random indices for UI refreshes
 let homeScreenIndices = [];
 let searchScreenIndices = [];
-
-// Search State
 let currentSearchFilter = 'All';
 
 // ========================================================
-// AUDIO EQUALIZER LOGIC (Web Audio API)
+// AUDIO VISUALIZER & EQUALIZER (Web Audio API)
 // ========================================================
 let audioCtx;
 let sourceNode;
 let lowFilter, midFilter, highFilter;
+let analyser;
+let canvasCtx;
+let visualizerAnimation;
 
 function initAudioEQ() {
     if (audioCtx) return; 
@@ -92,25 +104,57 @@ function initAudioEQ() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     sourceNode = audioCtx.createMediaElementSource(audio);
     
-    lowFilter = audioCtx.createBiquadFilter();
-    lowFilter.type = "lowshelf";
-    lowFilter.frequency.value = 250; 
-    
-    midFilter = audioCtx.createBiquadFilter();
-    midFilter.type = "peaking";
-    midFilter.frequency.value = 1000;
-    midFilter.Q.value = 1;
-    
-    highFilter = audioCtx.createBiquadFilter();
-    highFilter.type = "highshelf";
-    highFilter.frequency.value = 4000;
+    // EQ Nodes
+    lowFilter = audioCtx.createBiquadFilter(); lowFilter.type = "lowshelf"; lowFilter.frequency.value = 250; 
+    midFilter = audioCtx.createBiquadFilter(); midFilter.type = "peaking"; midFilter.frequency.value = 1000; midFilter.Q.value = 1;
+    highFilter = audioCtx.createBiquadFilter(); highFilter.type = "highshelf"; highFilter.frequency.value = 4000;
+
+    // Visualizer Node
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 128; // Determines number of bars
 
     sourceNode.connect(lowFilter);
     lowFilter.connect(midFilter);
     midFilter.connect(highFilter);
-    highFilter.connect(audioCtx.destination);
+    highFilter.connect(analyser); // Connect to visualizer
+    analyser.connect(audioCtx.destination); // Connect to speakers
     
     updateEQ(); 
+
+    // Setup Canvas
+    const canvas = document.getElementById("visualizer");
+    canvasCtx = canvas.getContext("2d");
+    drawVisualizer();
+}
+
+function drawVisualizer() {
+    visualizerAnimation = requestAnimationFrame(drawVisualizer);
+    
+    if (!analyser || audio.paused) return; // Save CPU when paused
+
+    const canvas = document.getElementById("visualizer");
+    canvas.width = window.innerWidth;
+    canvas.height = 300;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyser.getByteFrequencyData(dataArray);
+
+    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const barWidth = (canvas.width / bufferLength) * 2.5;
+    let barHeight;
+    let x = 0;
+
+    for(let i = 0; i < bufferLength; i++) {
+        barHeight = dataArray[i];
+
+        // Draw with current Accent Color
+        canvasCtx.fillStyle = currentTheme;
+        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+        x += barWidth + 2;
+    }
 }
 
 function updateEQ() {
@@ -131,6 +175,88 @@ function updateEQ() {
 ['eqLow', 'eqMid', 'eqHigh'].forEach(id => {
     document.getElementById(id).addEventListener('input', updateEQ);
 });
+
+// ========================================================
+// SYNCED LYRICS PARSER
+// ========================================================
+let parsedLyrics = [];
+let isLyricsVisible = false;
+
+function parseLRC(lrcText) {
+    parsedLyrics = [];
+    const lines = lrcText.split('\n');
+    const timeRegex = /\[(\d{2}):(\d{2}\.\d{2})\]/;
+
+    lines.forEach(line => {
+        const match = timeRegex.exec(line);
+        if (match) {
+            const minutes = parseInt(match[1]);
+            const seconds = parseFloat(match[2]);
+            const time = minutes * 60 + seconds;
+            const text = line.replace(timeRegex, '').trim();
+            if (text) parsedLyrics.push({ time, text });
+        }
+    });
+}
+
+function toggleLyrics() {
+    isLyricsVisible = !isLyricsVisible;
+    const overlay = document.getElementById("lyricsOverlay");
+    const btn = document.getElementById("lyricsBtn");
+    
+    if (isLyricsVisible) {
+        overlay.style.display = "block";
+        btn.classList.add("lyrics-active");
+        renderLyrics();
+    } else {
+        overlay.style.display = "none";
+        btn.classList.remove("lyrics-active");
+    }
+}
+
+function renderLyrics() {
+    const overlay = document.getElementById("lyricsOverlay");
+    overlay.innerHTML = "";
+    
+    if (parsedLyrics.length === 0) {
+        overlay.innerHTML = `<p style="color:gray; margin-top:150px;">No synced lyrics found for this track.</p>`;
+        return;
+    }
+
+    parsedLyrics.forEach((line, i) => {
+        overlay.innerHTML += `<div class="lyric-line" id="lyric-${i}">${line.text}</div>`;
+    });
+}
+
+function updateSyncedLyrics() {
+    if (!isLyricsVisible || parsedLyrics.length === 0) return;
+    
+    const currentTime = audio.currentTime;
+    let activeIndex = -1;
+
+    for (let i = 0; i < parsedLyrics.length; i++) {
+        if (currentTime >= parsedLyrics[i].time) {
+            activeIndex = i;
+        } else {
+            break;
+        }
+    }
+
+    if (activeIndex !== -1) {
+        document.querySelectorAll(".lyric-line").forEach(el => el.classList.remove("active-lyric"));
+        const activeEl = document.getElementById(`lyric-${activeIndex}`);
+        if (activeEl && !activeEl.classList.contains("active-lyric")) {
+            activeEl.classList.add("active-lyric");
+            
+            // Auto-scroll logic
+            const overlay = document.getElementById("lyricsOverlay");
+            overlay.scrollTo({
+                top: activeEl.offsetTop - (overlay.clientHeight / 2) + 20,
+                behavior: 'smooth'
+            });
+        }
+    }
+}
 
 // ========================================================
 // CUSTOM MODALS
@@ -175,6 +301,8 @@ function buildQueue(context) {
     currentPlaybackQueue = [];
     if (context === 'home') {
         currentPlaybackQueue = [...homeScreenIndices];
+    } else if (context === 'recent') { // Support queueing from Recent tab
+        currentPlaybackQueue = [...recentHistory];
     } else if (context === 'liked') {
         likedSongs.forEach(ls => {
             let idx = songs.findIndex(s => s.file === ls.file);
@@ -207,30 +335,61 @@ function refreshAllGrids() {
 }
 
 function loadSongs() {
-    const grid = document.getElementById("songGrid");
-    if (!grid) return;
-    grid.innerHTML = "";
+    // 1. Render Recommendations
+    const recGrid = document.getElementById("songGrid");
+    if (recGrid) {
+        recGrid.innerHTML = "";
+        homeScreenIndices.forEach((index) => {
+            const song = songs[index];
+            if (!song) return;
+            const isLiked = likedSongs.some(s => s.file === song.file);
+            const isPlaying = (currentSong === index);
+            
+            recGrid.innerHTML += `
+            <div class="card ${isPlaying ? 'playing-card' : ''}" 
+                 onclick="playSong(${index}, 'home')" 
+                 oncontextmenu="openContextMenu(event, ${index})" 
+                 ontouchstart="handleTouchStart(event, ${index})" 
+                 ontouchend="handleTouchEnd()" 
+                 ontouchmove="handleTouchEnd()">
+                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
+                <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
+                <div class="cover" style="background-image:url('${song.cover}')"></div>
+                <div class="title">${song.title}</div>
+                <div class="artist">${song.artist}</div>
+            </div>`;
+        });
+    }
+
+    // 2. Render Recently Played
+    const recentSection = document.getElementById("recentSection");
+    const recentGrid = document.getElementById("recentGrid");
     
-    homeScreenIndices.forEach((index) => {
-        const song = songs[index];
-        if (!song) return;
-        const isLiked = likedSongs.some(s => s.file === song.file);
-        const isPlaying = (currentSong === index);
+    if (recentGrid && recentHistory.length > 0) {
+        recentSection.style.display = "block";
+        recentGrid.innerHTML = "";
         
-        grid.innerHTML += `
-        <div class="card ${isPlaying ? 'playing-card' : ''}" 
-             onclick="playSong(${index}, 'home')" 
-             oncontextmenu="openContextMenu(event, ${index})" 
-             ontouchstart="handleTouchStart(event, ${index})" 
-             ontouchend="handleTouchEnd()" 
-             ontouchmove="handleTouchEnd()">
-            ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
-            <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
-            <div class="cover" style="background-image:url('${song.cover}')"></div>
-            <div class="title">${song.title}</div>
-            <div class="artist">${song.artist}</div>
-        </div>`;
-    });
+        recentHistory.forEach((index) => {
+            const song = songs[index];
+            if (!song) return;
+            const isLiked = likedSongs.some(s => s.file === song.file);
+            const isPlaying = (currentSong === index);
+            
+            recentGrid.innerHTML += `
+            <div class="card ${isPlaying ? 'playing-card' : ''}" 
+                 onclick="playSong(${index}, 'recent')" 
+                 oncontextmenu="openContextMenu(event, ${index})" 
+                 ontouchstart="handleTouchStart(event, ${index})" 
+                 ontouchend="handleTouchEnd()" 
+                 ontouchmove="handleTouchEnd()">
+                ${isPlaying ? '<div class="playing-icon">▶ PLAYING</div>' : ''}
+                <div class="like" onclick="toggleLike(event,${index})">${isLiked ? "💙" : "🤍"}</div>
+                <div class="cover" style="background-image:url('${song.cover}')"></div>
+                <div class="title">${song.title}</div>
+                <div class="artist">${song.artist}</div>
+            </div>`;
+        });
+    }
 }
 
 function renderLibrary() {
@@ -405,7 +564,7 @@ function addSongToPlaylist(playlistName) {
 }
 
 // ========================================================
-// SEARCH LOGIC & LANGUAGE FILTERS (WITH STABLE RANDOM)
+// SEARCH LOGIC & LANGUAGE FILTERS
 // ========================================================
 function setSearchFilter(lang) {
     currentSearchFilter = lang;
@@ -416,7 +575,6 @@ function setSearchFilter(lang) {
     searchSongs(); 
 }
 
-// NEW: Separated the generation of randoms from the displaying of randoms
 function generateSearchRecommendations() {
     let indices = songs.map((_, i) => i);
     indices.sort(() => 0.5 - Math.random());
@@ -428,7 +586,6 @@ function showRandomSearchSuggestions() {
     if (!results) return;
     results.innerHTML = "";
 
-    // If we somehow don't have randoms, generate them
     if (searchScreenIndices.length === 0) {
         generateSearchRecommendations();
     }
@@ -512,7 +669,7 @@ function searchSongs() {
     });
 }
 
-// --- ACTIONS ---
+// --- ACTIONS & HISTORY ---
 async function playSong(index, context = null) {
     if (context) {
         currentQueueContext = context;
@@ -524,13 +681,33 @@ async function playSong(index, context = null) {
     }
 
     currentSong = index;
-    refreshAllGrids(); // Redraws UI with playing indicator
-
     const song = songs[index];
+
+    // UPDATE RECENT HISTORY
+    recentHistory = recentHistory.filter(i => i !== index);
+    recentHistory.unshift(index);
+    if (recentHistory.length > 10) recentHistory.pop();
+    localStorage.setItem('sky_recent', JSON.stringify(recentHistory));
+
+    // UI Updates
+    refreshAllGrids(); 
     document.getElementById("player").style.display = "flex";
     document.getElementById("playerCover").src = song.cover;
     document.getElementById("playerTitle").innerText = "Loading...";
     document.getElementById("playerArtist").innerText = "";
+    
+    // Parse Lyrics if available
+    if (song.lyrics) {
+        parseLRC(song.lyrics);
+        document.getElementById("lyricsBtn").style.display = "flex";
+        if (isLyricsVisible) renderLyrics();
+    } else {
+        parsedLyrics = [];
+        document.getElementById("lyricsBtn").style.display = "none";
+        document.getElementById("lyricsOverlay").style.display = "none";
+        isLyricsVisible = false;
+        document.getElementById("lyricsBtn").classList.remove("lyrics-active");
+    }
     
     const blob = await getOfflineSong(song.file);
     if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
@@ -782,6 +959,7 @@ function handleCmDelete() {
         songs.splice(activeContextIndex, 1);
         likedSongs = likedSongs.filter(ls => ls.file !== song.file);
         downloadedURLs = downloadedURLs.filter(url => url !== song.file);
+        recentHistory = recentHistory.filter(i => i !== activeContextIndex);
         
         playlists.forEach(p => {
             p.songs = p.songs.filter(f => f !== song.file);
@@ -791,6 +969,7 @@ function handleCmDelete() {
         localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
         localStorage.setItem('downloadedURLs', JSON.stringify(downloadedURLs));
         localStorage.setItem('sky_playlists', JSON.stringify(playlists));
+        localStorage.setItem('sky_recent', JSON.stringify(recentHistory));
         
         const store = db.transaction(["offlineAudio"], "readwrite").objectStore("offlineAudio");
         store.delete(song.file);
@@ -858,7 +1037,6 @@ function showSection(id) {
         searchBar.focus(); 
         
         if (searchBar.value.trim() === "" && currentSearchFilter === 'All') {
-            // NEW: Only generate new randoms when the tab is first clicked!
             generateSearchRecommendations();
             showRandomSearchSuggestions();
         } else {
@@ -915,6 +1093,7 @@ audio.addEventListener('timeupdate', () => {
         bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
         document.getElementById("currentTime").innerText = formatTime(audio.currentTime);
     }
+    updateSyncedLyrics(); // NEW: Trigger lyrics update
 });
 
 audio.addEventListener('ended', nextSong);
@@ -922,6 +1101,12 @@ audio.addEventListener('ended', nextSong);
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
     if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
+    
+    // NEW: Ensure visualizer resumes
+    if (audioCtx && audioCtx.state === 'running') {
+        cancelAnimationFrame(visualizerAnimation);
+        drawVisualizer();
+    }
 });
 
 audio.addEventListener('pause', () => {
@@ -964,7 +1149,8 @@ function exportBackup() {
         songs: JSON.parse(localStorage.getItem('sky_songs_v4')) || songs,
         liked: JSON.parse(localStorage.getItem('likedSongs')) || [],
         downloads: JSON.parse(localStorage.getItem('downloadedURLs')) || [],
-        playlists: JSON.parse(localStorage.getItem('sky_playlists')) || []
+        playlists: JSON.parse(localStorage.getItem('sky_playlists')) || [],
+        recent: JSON.parse(localStorage.getItem('sky_recent')) || [] // Backup recent history
     };
     
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
@@ -991,6 +1177,7 @@ function importBackup() {
             if(data.liked) localStorage.setItem('likedSongs', JSON.stringify(data.liked));
             if(data.downloads) localStorage.setItem('downloadedURLs', JSON.stringify(data.downloads));
             if(data.playlists) localStorage.setItem('sky_playlists', JSON.stringify(data.playlists));
+            if(data.recent) localStorage.setItem('sky_recent', JSON.stringify(data.recent));
             
             customAlert("Backup restored successfully! Refreshing app...");
             setTimeout(() => location.reload(), 1500);
