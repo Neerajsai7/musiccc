@@ -10,7 +10,11 @@
 <link rel="apple-touch-icon" href="https://files.catbox.moe/h0tw6g.jpg">
 
 <style>
-/* NEW: Added -webkit-tap-highlight-color to remove the blue flash on mobile! */
+/* NEW: CSS Variables for dynamic accent colors! */
+:root {
+    --accent: #00f2fe;
+}
+
 * { 
     margin:0; padding:0; box-sizing:border-box; font-family:Arial; 
     -webkit-tap-highlight-color: transparent; 
@@ -24,7 +28,6 @@ body {
     overflow: hidden;
 }
 
-/* SIDEBAR & MOBILE OVERLAY */
 .mobile-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.6); z-index: 999; display: none;
@@ -54,10 +57,8 @@ body {
 
 .sidebar li:hover { background:rgba(255,255,255,0.20); }
 
-/* MAIN */
 .main { flex:1; display:flex; flex-direction:column; position: relative; }
 
-/* TOPBAR */
 .topbar {
     height:60px;
     background:rgba(255,255,255,0.10);
@@ -83,7 +84,6 @@ body {
     background: rgba(255, 255, 255, 0.8);
 }
 
-/* CONTENT */
 .content { flex:1; padding:25px; overflow-y:auto; padding-bottom: 120px; }
 
 .grid {
@@ -92,7 +92,6 @@ body {
     gap:20px;
 }
 
-/* CARD */
 .card {
     background:rgba(255,255,255,0.10);
     backdrop-filter:blur(15px);
@@ -113,14 +112,13 @@ body {
     box-shadow:0 20px 40px rgba(0,0,0,0.4);
 }
 
-/* NOW PLAYING HIGHLIGHT */
 .playing-card {
-    border: 2px solid #00f2fe !important;
-    box-shadow: 0 0 15px rgba(0, 242, 254, 0.4) !important;
+    border: 2px solid var(--accent) !important;
+    box-shadow: 0 0 15px var(--accent) !important;
 }
 
 .playing-icon {
-    position: absolute; top: 10px; left: 10px; background: rgba(0, 242, 254, 0.8);
+    position: absolute; top: 10px; left: 10px; background: var(--accent);
     color: #0b132b; font-size: 10px; padding: 3px 6px; border-radius: 4px;
     font-weight: bold; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
@@ -136,7 +134,6 @@ body {
 .title { font-weight:bold; color:white; margin-bottom: 5px; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 .artist { font-size:12px; color:#a0aec0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
 
-/* LIKE ICON */
 .like {
     position:absolute;
     top:10px;
@@ -157,7 +154,7 @@ body {
 
 .like:hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.25); }
 
-/* PLAYER */
+/* PLAYER & LYRICS & VISUALIZER */
 .player {
     position:fixed;
     bottom:0; left: 0; width: 100%;
@@ -187,18 +184,73 @@ body {
     margin-bottom: 30px;
     border-radius: 20px;
     box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    position: relative;
+    z-index: 10;
 }
 
 .player.fullscreen .player-info {
     text-align: center;
     max-width: 600px;
     margin-bottom: 30px;
+    z-index: 10;
 }
 
 .player.fullscreen #playerTitle { font-size: 28px; margin-bottom: 10px; }
 .player.fullscreen #playerArtist { font-size: 18px; margin-bottom: 20px; color: #a0aec0; }
 
-/* CLOSE PLAYER BUTTON */
+/* Canvas Visualizer */
+#visualizer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 300px;
+    z-index: 1;
+    display: none;
+    opacity: 0.6;
+    pointer-events: none;
+}
+.player.fullscreen #visualizer { display: block; }
+
+/* Lyrics Overlay */
+#lyricsOverlay {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 500px;
+    height: 350px;
+    background: rgba(11, 19, 43, 0.85);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 15;
+    overflow-y: auto;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    scroll-behavior: smooth;
+}
+
+#lyricsOverlay::-webkit-scrollbar { display: none; }
+
+.lyric-line {
+    color: #a0aec0;
+    font-size: 18px;
+    margin: 15px 0;
+    transition: 0.3s ease;
+    font-weight: bold;
+}
+
+.lyric-line.active-lyric {
+    color: var(--accent);
+    font-size: 24px;
+    text-shadow: 0 0 15px var(--accent);
+    transform: scale(1.05);
+}
+
 #closePlayerBtn {
     position: absolute;
     top: 8px;
@@ -220,7 +272,6 @@ body {
 
 .player.fullscreen #closePlayerBtn { display: none; }
 
-/* BACK BUTTON */
 #backBtn {
     position: absolute;
     top: 30px;
@@ -238,6 +289,7 @@ body {
     padding: 10px 20px;
     border-radius: 30px;
     transition: 0.3s;
+    z-index: 20;
 }
 
 #backBtn:hover { background: rgba(255, 255, 255, 0.25); }
@@ -280,17 +332,15 @@ body {
     color: #a0aec0;
 }
 
-/* VOLUME SLIDER */
 .volume-slider {
     width: 70px; height: 4px; border-radius: 2px;
     -webkit-appearance: none; background: rgba(255,255,255,0.2); outline: none;
 }
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%;
-    background: #00f2fe; cursor: pointer;
+    background: var(--accent); cursor: pointer;
 }
 
-/* GENERAL BUTTONS */
 button {
     background: rgba(255, 255, 255, 0.15);
     -webkit-backdrop-filter: blur(15px) saturate(150%);
@@ -313,7 +363,6 @@ button:hover {
     box-shadow: 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
-/* CATEGORY FILTER STYLES */
 .filter-btn {
     white-space: nowrap;
     padding: 8px 16px;
@@ -321,15 +370,14 @@ button:hover {
     border-radius: 30px;
 }
 .active-filter {
-    background: rgba(0, 242, 254, 0.3) !important;
-    border: 1px solid #00f2fe !important;
-    box-shadow: 0 0 10px rgba(0, 242, 254, 0.3) !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid var(--accent) !important;
+    box-shadow: 0 0 10px var(--accent) !important;
 }
 .category-filters::-webkit-scrollbar { height: 4px; }
 .category-filters::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
-/* PLAYER CONTROLS */
-.player-controls { display: flex; gap: 8px; align-items: center; }
+.player-controls { display: flex; gap: 8px; align-items: center; z-index: 10; }
 
 .player-controls button {
     background: transparent;
@@ -350,10 +398,10 @@ button:hover {
     transform: scale(1.15);
 }
 
-.loop-active, .shuffle-active {
+.loop-active, .shuffle-active, .lyrics-active {
     background: transparent !important;
     border: none !important;
-    filter: drop-shadow(0 0 8px #00f2fe);
+    filter: drop-shadow(0 0 8px var(--accent));
 }
 
 .addForm input, .modal-content input, .playlist-input {
@@ -367,7 +415,13 @@ button:hover {
     background: rgba(255,255,255,0.8);
 }
 
-/* CUSTOM RIGHT-CLICK CONTEXT MENU */
+/* THEME SWATCHES */
+.theme-swatch {
+    width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.2); transition: 0.3s;
+}
+.theme-swatch:hover { transform: scale(1.15); border-color: white; }
+
 .context-menu {
     position: absolute;
     display: none;
@@ -395,67 +449,37 @@ button:hover {
 
 .context-menu-item:hover { background: rgba(255, 255, 255, 0.2); }
 
-.delete-item {
-    color: #ff4b2b;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    margin-top: 5px;
-}
+.delete-item { color: #ff4b2b; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 5px; }
 
-/* MODALS */
 .modal-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 3000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
+    display: none; align-items: center; justify-content: center; z-index: 3000;
 }
 
 .modal-content {
-    background: rgba(28, 37, 65, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 25px;
-    border-radius: 16px;
-    width: 90%;
-    max-width: 350px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-    color: white;
+    background: rgba(28, 37, 65, 0.9); border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 25px; border-radius: 16px; width: 90%; max-width: 350px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5); color: white;
 }
 
 .modal-content h3 { margin-bottom: 20px; text-align: center; }
 
-/* TOAST NOTIFICATION */
 .toast {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 30px;
-    padding: 12px 24px;
-    color: white;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    z-index: 9999;
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 30px;
+    padding: 12px 24px; color: white; font-weight: bold; display: flex;
+    align-items: center; gap: 12px; z-index: 9999;
     transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .toast.hidden { opacity: 0; transform: translate(-50%, -40px); visibility: hidden; }
 
 .spinner {
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,0.2);
-    border-top-color: #00f2fe;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: none;
+    width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 1s linear infinite; display: none;
 }
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -463,22 +487,18 @@ button:hover {
 .section {display:none;}
 .active {display:block;}
 
-/* MOBILE RESPONSIVENESS */
 @media (max-width: 768px) {
     .hamburger { display: block; }
     .sidebar {
         position: fixed; top: 0; left: -250px; width: 220px; height: 100vh;
-        flex-direction: column; justify-content: flex-start;
-        transition: 0.3s ease-in-out;
+        flex-direction: column; justify-content: flex-start; transition: 0.3s ease-in-out;
     }
     .sidebar.open { left: 0; }
     .sidebar h2 { display: block; margin-top: 10px; }
     .topbar { justify-content: flex-start; }
     .search { width: 100%; }
     
-    .player:not(.fullscreen) .hide-on-mobile {
-        display: none !important;
-    }
+    .player:not(.fullscreen) .hide-on-mobile { display: none !important; }
 }
 </style>
 </head>
@@ -507,7 +527,12 @@ button:hover {
 
     <div class="content">
         <div id="home" class="section active">
-            <h2 style="color:white; margin-bottom: 20px;">Recommended Songs</h2>
+            <div id="recentSection" style="display: none;">
+                <h2 style="color:white; margin-bottom: 20px;">🕒 Recently Played</h2>
+                <div class="grid" id="recentGrid" style="margin-bottom: 35px;"></div>
+            </div>
+
+            <h2 style="color:white; margin-bottom: 20px;">✨ Recommended Songs</h2>
             <div class="grid" id="songGrid"></div>
         </div>
 
@@ -575,10 +600,22 @@ button:hover {
         </div>
 
         <div id="settings" class="section">
-            <h2 style="color:white; margin-bottom: 20px;">Settings & Backup</h2>
+            <h2 style="color:white; margin-bottom: 20px;">Settings & Customization</h2>
             
             <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
-                <h3 style="color:#00f2fe; margin-bottom: 10px;">🎛️ Audio Equalizer</h3>
+                <h3 style="color:white; margin-bottom: 10px;">🎨 Accent Color</h3>
+                <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Change the glowing accent theme of your app.</p>
+                <div style="display:flex; gap:15px;">
+                    <div class="theme-swatch" style="background: #00f2fe;" onclick="changeTheme('#00f2fe')"></div>
+                    <div class="theme-swatch" style="background: #ff007f;" onclick="changeTheme('#ff007f')"></div>
+                    <div class="theme-swatch" style="background: #00ff87;" onclick="changeTheme('#00ff87')"></div>
+                    <div class="theme-swatch" style="background: #f9ca24;" onclick="changeTheme('#f9ca24')"></div>
+                    <div class="theme-swatch" style="background: #9d00ff;" onclick="changeTheme('#9d00ff')"></div>
+                </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
+                <h3 style="color:var(--accent); margin-bottom: 10px;">🎛️ Audio Equalizer</h3>
                 <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Customize the frequency bands to tune the sound to your liking.</p>
                 <div style="display:flex; flex-direction:column; gap:15px;">
                     <div>
@@ -597,7 +634,7 @@ button:hover {
             </div>
 
             <div style="background:rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; max-width: 400px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
-                <h3 style="color:#00f2fe; margin-bottom: 10px;">📥 Export Backup</h3>
+                <h3 style="color:var(--accent); margin-bottom: 10px;">📥 Export Backup</h3>
                 <p style="color:#a0aec0; font-size: 13px; margin-bottom: 15px;">Download a file containing all your custom songs, playlists, and likes. (Offline files are not included).</p>
                 <button onclick="exportBackup()" style="width: 100%;">Download Backup File</button>
             </div>
@@ -614,7 +651,13 @@ button:hover {
     <div class="player" id="player">
         <div id="closePlayerBtn" onclick="closePlayer(event)">✖</div>
         <div id="backBtn" onclick="shrinkPlayer()">⬅ Down</div>
+        
+        <canvas id="visualizer" class="hide-on-mobile"></canvas>
+        
         <img id="playerCover" onclick="expandPlayer()">
+
+        <div id="lyricsOverlay"></div>
+
         <div class="player-info" onclick="expandPlayer()">
             <div id="playerTitle"></div>
             <div id="playerArtist"></div>
@@ -639,6 +682,8 @@ button:hover {
             
             <button class="hide-on-mobile" id="shuffleBtn" onclick="toggleShuffle()" style="font-size: 18px; color: white;">🔀</button>
             
+            <button class="hide-on-mobile" id="lyricsBtn" onclick="toggleLyrics()" style="font-size: 18px; color: white;">🎤</button>
+
             <button class="hide-on-mobile" id="loopBtn" onclick="toggleLoop()">
                 <img src="https://files.catbox.moe/rmtk4t.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Loop">
             </button>
@@ -693,7 +738,7 @@ button:hover {
 <div id="customAlertModal" class="modal-overlay">
     <div class="modal-content" style="text-align: center;">
         <h3 id="customAlertMessage" style="font-size: 16px; margin-bottom: 25px; line-height: 1.5;">Message</h3>
-        <button onclick="closeCustomAlert()" style="width: 100%; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);">OK</button>
+        <button onclick="closeCustomAlert()" style="width: 100%; background: linear-gradient(135deg, var(--accent) 0%, #4facfe 100%);">OK</button>
     </div>
 </div>
 
