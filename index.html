@@ -10,7 +10,6 @@
 <link rel="apple-touch-icon" href="https://files.catbox.moe/h0tw6g.jpg">
 
 <style>
-/* NEW: CSS Variables for dynamic accent colors! */
 :root {
     --accent: #00f2fe;
 }
@@ -154,7 +153,7 @@ body {
 
 .like:hover { transform: scale(1.1); background: rgba(255, 255, 255, 0.25); }
 
-/* PLAYER & LYRICS & VISUALIZER */
+/* PLAYER & LYRICS */
 .player {
     position:fixed;
     bottom:0; left: 0; width: 100%;
@@ -178,7 +177,7 @@ body {
     background: linear-gradient(135deg, #0b132b, #1c2541, #1e3c72);
 }
 
-.player.fullscreen img {
+.player.fullscreen img#playerCover {
     width: 250px;
     height: 250px;
     margin-bottom: 30px;
@@ -197,20 +196,6 @@ body {
 
 .player.fullscreen #playerTitle { font-size: 28px; margin-bottom: 10px; }
 .player.fullscreen #playerArtist { font-size: 18px; margin-bottom: 20px; color: #a0aec0; }
-
-/* Canvas Visualizer */
-#visualizer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 300px;
-    z-index: 1;
-    display: none;
-    opacity: 0.6;
-    pointer-events: none;
-}
-.player.fullscreen #visualizer { display: block; }
 
 /* Lyrics Overlay */
 #lyricsOverlay {
@@ -296,7 +281,7 @@ body {
 
 .player.fullscreen #backBtn { display: block; }
 
-.player img {
+.player img#playerCover {
     width:60px;
     height:60px;
     border-radius:8px;
@@ -377,7 +362,13 @@ button:hover {
 .category-filters::-webkit-scrollbar { height: 4px; }
 .category-filters::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
-.player-controls { display: flex; gap: 8px; align-items: center; z-index: 10; }
+/* FIXED PLAYER CONTROLS ALIGNMENT */
+.player-controls { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center; 
+    z-index: 10; 
+}
 
 .player-controls button {
     background: transparent;
@@ -385,7 +376,10 @@ button:hover {
     backdrop-filter: none;
     border: none;
     box-shadow: none;
-    padding: 8px;
+    padding: 0;
+    margin: 0;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -415,7 +409,6 @@ button:hover {
     background: rgba(255,255,255,0.8);
 }
 
-/* THEME SWATCHES */
 .theme-swatch {
     width: 35px; height: 35px; border-radius: 50%; cursor: pointer;
     border: 2px solid rgba(255,255,255,0.2); transition: 0.3s;
@@ -652,8 +645,6 @@ button:hover {
         <div id="closePlayerBtn" onclick="closePlayer(event)">✖</div>
         <div id="backBtn" onclick="shrinkPlayer()">⬅ Down</div>
         
-        <canvas id="visualizer" class="hide-on-mobile"></canvas>
-        
         <img id="playerCover" onclick="expandPlayer()">
 
         <div id="lyricsOverlay"></div>
@@ -681,9 +672,7 @@ button:hover {
             </button>
             
             <button class="hide-on-mobile" id="shuffleBtn" onclick="toggleShuffle()" style="font-size: 18px; color: white;">🔀</button>
-            
             <button class="hide-on-mobile" id="lyricsBtn" onclick="toggleLyrics()" style="font-size: 18px; color: white;">🎤</button>
-
             <button class="hide-on-mobile" id="loopBtn" onclick="toggleLoop()">
                 <img src="https://files.catbox.moe/rmtk4t.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Loop">
             </button>
