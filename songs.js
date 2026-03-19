@@ -25,8 +25,6 @@ const defaultSongs = [
     {title: "Ishq Jalakar", artist: "Unknown", cover: "https://picsum.photos/200?random=30", file: "https://files.catbox.moe/9xumb2.mp3", language: "Hindi"},
     {title: "Gehra Hua", artist: "Unknown", cover: "https://picsum.photos/200?random=31", file: "https://files.catbox.moe/kzlz70.mp3", language: "Hindi"},
     {title: "Laagi Re Lagan", artist: "Unknown", cover: "https://picsum.photos/200?random=32", file: "https://files.catbox.moe/n9qgtq.mp3", language: "Hindi"},
-    
-    // --- NEW Hindi Songs ---
     {title: "Sajni", artist: "Unknown", cover: "https://picsum.photos/200?random=56", file: "https://files.catbox.moe/hfm9am.mp3", language: "Hindi"},
     {title: "Tum Hi Ho Bandhu", artist: "Unknown", cover: "https://picsum.photos/200?random=57", file: "https://files.catbox.moe/zmazmr.mp3", language: "Hindi"},
     {title: "Afghan Jalebi", artist: "Unknown", cover: "https://picsum.photos/200?random=58", file: "https://files.catbox.moe/3i5xoa.mp3", language: "Hindi"},
@@ -60,8 +58,39 @@ const defaultSongs = [
     {title: "I Really Do", artist: "Unknown", cover: "https://picsum.photos/200?random=10", file: "https://files.catbox.moe/hs231u.mp3", language: "Punjabi"},
     {title: "For A Reason", artist: "Unknown", cover: "https://picsum.photos/200?random=11", file: "https://files.catbox.moe/eq7c5h.mp3", language: "Punjabi"},
 
-    // --- English Songs ---
-    {title: "Shape of You", artist: "Ed Sheeran", cover: "https://picsum.photos/200?random=44", file: "https://files.catbox.moe/h6sxqt.mp3", language: "English"},
+    // --- English Songs (WITH SYNCED LYRICS DEMO) ---
+    {
+        title: "Shape of You", 
+        artist: "Ed Sheeran", 
+        cover: "https://picsum.photos/200?random=44", 
+        file: "https://files.catbox.moe/h6sxqt.mp3", 
+        language: "English",
+        lyrics: `[00:00.00] (Instrumental Intro)
+[00:09.50] The club isn't the best place to find a lover
+[00:11.80] So the bar is where I go
+[00:14.20] Me and my friends at the table doing shots
+[00:16.50] Drinking fast and then we talk slow
+[00:18.90] You come over and start up a conversation with just me
+[00:21.30] And trust me I'll give it a chance now
+[00:23.70] Take my hand, stop, put Van the Man on the jukebox
+[00:26.10] And then we start to dance, and now I'm singing like
+[00:28.50] Girl, you know I want your love
+[00:30.90] Your love was handmade for somebody like me
+[00:33.30] Come on now, follow my lead
+[00:35.70] I may be crazy, don't mind me
+[00:38.10] Say, boy, let's not talk too much
+[00:40.50] Grab on my waist and put that body on me
+[00:42.90] Come on now, follow my lead
+[00:45.30] Come, come on now, follow my lead
+[00:47.70] I'm in love with the shape of you
+[00:50.10] We push and pull like a magnet do
+[00:52.50] Although my heart is falling too
+[00:54.90] I'm in love with your body
+[00:57.30] And last night you were in my room
+[00:59.70] And now my bedsheets smell like you
+[01:02.10] Every day discovering something brand new
+[01:04.50] I'm in love with your body`
+    },
     {title: "Believer", artist: "Imagine Dragons", cover: "https://picsum.photos/200?random=45", file: "https://files.catbox.moe/zvhemy.mp3", language: "English"},
     {title: "Faded", artist: "Alan Walker", cover: "https://picsum.photos/200?random=46", file: "https://files.catbox.moe/9q4oau.mp3", language: "English"},
     {title: "Love Me Like You Do", artist: "Ellie Goulding", cover: "https://picsum.photos/200?random=47", file: "https://files.catbox.moe/xryip4.mp3", language: "English"},
