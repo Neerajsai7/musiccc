@@ -181,11 +181,11 @@ function renderLyrics() {
     });
 }
 
-// FIXED: Added 0.6 second delay to audio.currentTime to prevent lyrics jumping ahead early
+// FIXED: Increased delay to 1.2 seconds for perfect lyric syncing!
 function updateSyncedLyrics() {
     if (!isLyricsVisible || parsedLyrics.length === 0) return;
     
-    const currentTime = audio.currentTime - 0.6; 
+    const currentTime = audio.currentTime - 1.2; 
     let activeIndex = -1;
 
     for (let i = 0; i < parsedLyrics.length; i++) {
