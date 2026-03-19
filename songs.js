@@ -25,8 +25,6 @@ const defaultSongs = [
     {title: "Ishq Jalakar", artist: "Unknown", cover: "https://picsum.photos/200?random=30", file: "https://files.catbox.moe/9xumb2.mp3", language: "Hindi"},
     {title: "Gehra Hua", artist: "Unknown", cover: "https://picsum.photos/200?random=31", file: "https://files.catbox.moe/kzlz70.mp3", language: "Hindi"},
     {title: "Laagi Re Lagan", artist: "Unknown", cover: "https://picsum.photos/200?random=32", file: "https://files.catbox.moe/n9qgtq.mp3", language: "Hindi"},
-    
-    // --- NEW Hindi Songs ---
     {title: "Sajni", artist: "Unknown", cover: "https://picsum.photos/200?random=56", file: "https://files.catbox.moe/hfm9am.mp3", language: "Hindi"},
     {title: "Tum Hi Ho Bandhu", artist: "Unknown", cover: "https://picsum.photos/200?random=57", file: "https://files.catbox.moe/zmazmr.mp3", language: "Hindi"},
     {title: "Afghan Jalebi", artist: "Unknown", cover: "https://picsum.photos/200?random=58", file: "https://files.catbox.moe/3i5xoa.mp3", language: "Hindi"},
@@ -40,112 +38,6 @@ const defaultSongs = [
 
     // --- Telugu / South Songs (WITH FULL SYNCED LYRICS) ---
     {
-        title: "Thalapathy Kacheri", artist: "Unknown", cover: "https://picsum.photos/200?random=26", file: "https://files.catbox.moe/l6shmk.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Instrumental Music)
-[00:15.00] Start the music...
-[00:20.00] Thalapathy kacheri
-[00:25.00] Let's start the kacheri
-[00:30.00] (Beats continuing...)
-[00:45.00] Dance to the rhythm
-[00:50.00] Feel the energy
-[01:05.00] (Instrumental drop)`
-    },
-    {
-        title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=33", file: "https://files.catbox.moe/y0df1k.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Intro Beats)
-[00:12.00] Chikiri chikiri...
-[00:18.00] Ooh lala chikiri chikiri
-[00:24.00] Andamtho aadesuko
-[00:30.00] Vayasutho paadesuko
-[00:35.00] Chikiri chikiri...
-[00:40.00] (Instrumental...)
-[00:55.00] Kallatho chesey maaya
-[01:00.00] Gundello yedo gaayam`
-    },
-    {
-        title: "Chiru Chiru", artist: "Awara", cover: "https://picsum.photos/200?random=34", file: "https://files.catbox.moe/9geklv.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Beautiful Guitar Intro)
-[00:14.50] Chiru chiru chiru chinukai kurisaave
-[00:19.50] Manasuna madi murise varamaave
-[00:24.80] Yegirey yegirey...
-[00:30.00] Naa pranam yegirey...
-[00:35.00] Neeve yavvanam... yavvanam
-[00:40.00] Gundello nindaave
-[00:45.50] Chiru chiru chiru chinukai kurisaave
-[00:50.50] Manasuna madi murise varamaave
-[00:55.00] (Instrumental Interlude)
-[01:10.00] Kannullo neeli mabbulu
-[01:15.00] Vennello aade tharalu
-[01:20.00] Naa kosam vachina devathe nuvve`
-    },
-    {
-        title: "Nee Yadalo", artist: "Awara", cover: "https://picsum.photos/200?random=35", file: "https://files.catbox.moe/6dtk2w.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Melody starts)
-[00:18.00] Nee yadalo naaku chotu unda...
-[00:24.00] Naa hrudayam neeku sonthaminda...
-[00:30.00] Oohallo theli aadanu...
-[00:36.00] Neethone nenu undanu...
-[00:42.00] Nijamga neevu naavena...
-[00:48.00] Naa sontham nuvvu kaavena...
-[00:54.00] (Instrumental Solo)
-[01:15.00] Kanti paapa lona daachi uncha ninne
-[01:21.00] Premalona padi poina...`
-    },
-    {
-        title: "Ninnu Chuse Anandamlo", artist: "Gang Leader", cover: "https://picsum.photos/200?random=36", file: "https://files.catbox.moe/t05z8d.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Intro)
-[00:10.00] Ninnu chuse anandamlo...
-[00:15.50] Kannu mooste andamlo...
-[00:20.00] Yegasi poyindhi naa manase...
-[00:25.00] Nee kosam vethiki vethiki
-[00:30.00] Alisipoyindhi naa pranam
-[00:35.00] Ninnu chuse anandamlo...
-[00:40.00] Kannu mooste andamlo...
-[00:45.00] (Instrumental Drop)
-[01:05.00] Vennela kante challanidhi
-[01:10.00] Nee navvu nannu thakindhi`
-    },
-    {
-        title: "Hoyna Hoyna", artist: "Gang Leader", cover: "https://picsum.photos/200?random=37", file: "https://files.catbox.moe/odv2p2.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Intro Beats)
-[00:14.00] Hoyna hoyna...
-[00:20.00] Neeto unte chaale
-[00:25.00] Pranam motham neeke...
-[00:30.00] Hoyna hoyna...
-[00:35.00] Naalo aasa neeve
-[00:40.00] Naa shwasa kooda neeve
-[00:45.00] (Music Interlude)
-[01:00.00] Puvvulanti ammayi
-[01:05.00] Navvutho nannu champake
-[01:10.00] Hoyna hoyna...`
-    },
-    {
-        title: "Hello Rammante", artist: "Orange", cover: "https://picsum.photos/200?random=38", file: "https://files.catbox.moe/6ic1li.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Upbeat Intro)
-[00:12.50] Hello rammante vachesindha
-[00:17.50] Pillo nee midha naake prema
-[00:22.00] Ye maaya chesave o preyasi
-[00:27.00] Gundello nindave o urvasi
-[00:32.00] Hello rammante vachesindha
-[00:37.00] Pillo nee midha naake prema
-[00:42.00] (Instrumental Beats)
-[00:58.00] Navvutho nannu laagesave
-[01:03.00] Kallatho nannu katteseve`
-    },
-    {
-        title: "Ola Olaala Ala", artist: "Orange", cover: "https://picsum.photos/200?random=39", file: "https://files.catbox.moe/w7b93p.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Intro)
-[00:15.00] Ola olaala ala...
-[00:20.00] Nee roope chusthuntey ilaa...
-[00:25.00] Manasu yegirey mabbu laaga
-[00:30.00] Gaalilo theli aadanu ilaa
-[00:35.00] Ola olaala ala...
-[00:40.00] Nee roope chusthuntey ilaa...
-[00:45.00] (Instrumental Drop)
-[01:05.00] Kalalu kooda nijam laaga
-[01:10.00] Anipisthundi neetho unna vela`
-    },
-    {
         title: "Chilipiga", artist: "Orange", cover: "https://picsum.photos/200?random=40", file: "https://files.catbox.moe/f8vhp1.mp3", language: "Telugu",
         lyrics: `[00:00.00] (Guitar Intro)
 [00:15.00] Chilipiga choosthavala
@@ -155,13 +47,62 @@ const defaultSongs = [
 [00:40.00] Naa oopiri neevai nilichaave
 [00:46.00] Chilipiga choosthavala
 [00:52.00] Ninukala choosedela
-[00:58.00] (Beautiful Interlude)
+[00:58.00] (Instrumental Interlude)
 [01:15.00] Oohalalo unna ninne choosthunna
-[01:21.00] Nijamlo kooda neekosam vetikanaa`
+[01:21.00] Nijamlo kooda neekosam vetikanaa
+[01:27.00] Naa kanti paapalo nee roopam undile
+[01:33.00] Naa gunde chappudilo nee pere mrogile
+[01:40.00] Ee maina ninnu vadhalanule
+[01:45.00] Naa thodu nuvve kavale
+[01:52.00] Chilipiga choosthavala
+[01:58.00] Ninukala choosedela
+[02:05.00] (Instrumental Interlude 2)
+[02:30.00] Vennela vanallo neetho nadavaali
+[02:36.00] Vechani kougillo ninu bandhichaali
+[02:42.00] Ee kshanam ilaage aagipovaali
+[02:48.00] Nee prematho nenu brathikeyaali
+[02:55.00] Nuvvante naaku pichhe le
+[03:00.00] Nee premalo nenu pichhonne
+[03:07.00] Chilipiga choosthavala
+[03:13.00] Ninukala choosedela
+[03:20.00] (Outro Music)`
+    },
+    {
+        title: "Chiru Chiru", artist: "Awara", cover: "https://picsum.photos/200?random=34", file: "https://files.catbox.moe/9geklv.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Beautiful Guitar Intro)
+[00:14.50] Chiru chiru chiru chinukai kurisaave
+[00:19.50] Manasuna madi murise varamaave
+[00:24.80] Yegirey yegirey... Naa pranam yegirey...
+[00:35.00] Neeve yavvanam... yavvanam
+[00:40.00] Gundello nindaave
+[00:45.50] Chiru chiru chiru chinukai kurisaave
+[00:50.50] Manasuna madi murise varamaave
+[00:55.00] (Instrumental Interlude)
+[01:30.00] Tholakarigaa naa manasuni thadipaave
+[01:35.00] Alalugaa naa yedhane munchesaave
+[01:40.00] Ninnu choosina aa kshanam
+[01:45.00] Naa kallaallo daachaanu
+[01:50.00] Nee navvula puvvulanu
+[01:55.00] Naa gundello poojaichaanu
+[02:00.00] Chiru chiru chiru chinukai kurisaave
+[02:05.00] Manasuna madi murise varamaave
+[02:10.00] (Instrumental Interlude 2)
+[02:40.00] Kila kila nee navvulu vinnaanu
+[02:45.00] Mila mila nee kannulu choosaanu
+[02:50.00] Ennadu leni ee vinthe
+[02:55.00] Naalo nene navvukunna
+[03:00.00] Emaindo naake theliyade
+[03:05.00] Nee premane korukunna
+[03:10.00] Chiru chiru chiru chinukai kurisaave
+[03:15.00] Manasuna madi murise varamaave
+[03:20.00] Yegirey yegirey... Naa pranam yegirey...
+[03:25.00] Neeve yavvanam... yavvanam
+[03:30.00] Gundello nindaave
+[03:35.00] (Outro Music)`
     },
     {
         title: "Nenu Nuvvantu", artist: "Orange", cover: "https://picsum.photos/200?random=41", file: "https://files.catbox.moe/gvglj1.mp3", language: "Telugu",
-        lyrics: `[00:00.00] (Soft Music)
+        lyrics: `[00:00.00] (Soft Intro)
 [00:16.00] Nenu nuvvantu verai unna...
 [00:22.00] Naake ee velalo neevai unna...
 [00:28.00] Gundello yedo alajadi...
@@ -170,7 +111,23 @@ const defaultSongs = [
 [00:46.00] Naake ee velalo neevai unna...
 [00:52.00] (Instrumental Melody)
 [01:10.00] Dooramga unna neelo unna
-[01:16.00] Nee paluke naaku vinipisthundi`
+[01:16.00] Nee paluke naaku vinipisthundi
+[01:22.00] Naa kanti venuka swapnam laaga
+[01:28.00] Nee roopam nannu ventaaduthundi
+[01:34.00] Naa pranam antha neekosame
+[01:40.00] Ee lokam antha mana kosame
+[01:46.00] Nenu nuvvantu verai unna...
+[01:52.00] Naake ee velalo neevai unna...
+[01:58.00] (Instrumental Interlude 2)
+[02:25.00] Vennello kooda vedi undi
+[02:31.00] Nee ooha naalo raguluthu unte
+[02:37.00] Kannullo kooda nidura ledu
+[02:43.00] Nee thalape nannu nidura lepithe
+[02:49.00] Naa shwasa lona nee shwasave
+[02:55.00] Naa gunde lona nee savvade
+[03:01.00] Nenu nuvvantu verai unna...
+[03:07.00] Naake ee velalo neevai unna...
+[03:13.00] (Outro)`
     },
     {
         title: "Rooba Rooba", artist: "Orange", cover: "https://picsum.photos/200?random=42", file: "https://files.catbox.moe/n86g5c.mp3", language: "Telugu",
@@ -185,7 +142,26 @@ const defaultSongs = [
 [00:45.00] Kanne choopu gaalamesthe emaipothaane
 [00:50.00] Ninnu choodagane gunde jaari poyene
 [00:55.00] (Instrumental Beats)
-[01:10.00] Rooba rooba rooba rooba...`
+[01:15.00] Nee navvulo edo mathu undi
+[01:20.00] Naa manasuni laagesthundi
+[01:25.00] Nee kalla lo edo katha undi
+[01:30.00] Naa vayasu ni chooresthundi
+[01:35.00] Ninnu chusina prathi kshanam
+[01:40.00] Aagipoda naa pranam
+[01:45.00] Rooba rooba rooba rooba...
+[01:50.00] Hey rooba rooba rooba rooba...
+[01:55.00] (Instrumental Drop)
+[02:25.00] Mallepuvvu kooda chinna pothunnadi
+[02:30.00] Nee andam mundu velipothunnadi
+[02:35.00] Naa gunde kooda aagipothunnadi
+[02:40.00] Nee roopam chusi muchata paduthunnadi
+[02:45.00] Ninnu kalisina ee kshanam
+[02:50.00] Marichipoda naa pranam
+[02:55.00] Rooba rooba rooba rooba...
+[03:00.00] Hey rooba rooba rooba rooba...
+[03:05.00] Andamaina mabbulona chandamama
+[03:10.00] Nuvve nuvve oh bhaama
+[03:15.00] (Outro Fade)`
     },
     {
         title: "O Range", artist: "Orange", cover: "https://picsum.photos/200?random=43", file: "https://files.catbox.moe/1v6ctl.mp3", language: "Telugu",
@@ -198,7 +174,211 @@ const defaultSongs = [
 [00:42.00] Neekosam emaina chesthaane
 [00:48.00] (Guitar Solo)
 [01:05.00] Ningi nela okkatai poyina
-[01:11.00] Naa prema eppatiki maaradhey`
+[01:11.00] Naa prema eppatiki maaradhey
+[01:17.00] Konda kona kooda karigipoyina
+[01:23.00] Nee pai naa ishtam karigipodhey
+[01:29.00] Nuvvante naaku antha pichhe
+[01:35.00] Nee kosam naa pranam isthaane
+[01:41.00] O Range... preminchaane
+[01:47.00] Neekosam emaina chesthaane
+[01:53.00] (Heavy Instrumental)
+[02:25.00] Gaali vaana vachi kottukupoyina
+[02:31.00] Mana prema janta vidipodhey
+[02:37.00] Lokam antha nannu velivesina
+[02:43.00] Naa pranam ninnu vadilipodhey
+[02:49.00] Nuvvu leni nenu shunyaame
+[02:55.00] Nee thodai nenu untaane
+[03:01.00] O Range... preminchaane
+[03:07.00] Neekosam emaina chesthaane
+[03:13.00] (Outro Solo)`
+    },
+    {
+        title: "Nee Yadalo", artist: "Awara", cover: "https://picsum.photos/200?random=35", file: "https://files.catbox.moe/6dtk2w.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Melody starts)
+[00:18.00] Nee yadalo naaku chotu unda...
+[00:24.00] Naa hrudayam neeku sonthaminda...
+[00:30.00] Oohallo theli aadanu...
+[00:36.00] Neethone nenu undanu...
+[00:42.00] Nijamga neevu naavena...
+[00:48.00] Naa sontham nuvvu kaavena...
+[00:54.00] (Instrumental Solo)
+[01:15.00] Kanti paapa lona daachi uncha ninne
+[01:21.00] Premalona padi poina...
+[01:27.00] Gundelona ninnu prematho nimpina
+[01:33.00] Nee jathalo nenu aagina
+[01:39.00] Naa pranam neede oh nesthama
+[01:45.00] Nee premalo nenu pichhondina
+[01:51.00] Nee yadalo naaku chotu unda...
+[01:57.00] Naa hrudayam neeku sonthaminda...
+[02:03.00] (Instrumental Interlude 2)
+[02:35.00] Ningi nela ninnu choosi murisene
+[02:41.00] Nee navvutho lokam merisene
+[02:47.00] Chandamama kooda chinna bшена
+[02:53.00] Nee andam choosi oh bhamana
+[02:59.00] Nee roopam naalo mudhrinchina
+[03:05.00] Nee thodai nenu brathikesthana
+[03:11.00] Nee yadalo naaku chotu unda...
+[03:17.00] Naa hrudayam neeku sonthaminda...
+[03:23.00] (Outro Music)`
+    },
+    {
+        title: "Thalapathy Kacheri", artist: "Unknown", cover: "https://picsum.photos/200?random=26", file: "https://files.catbox.moe/l6shmk.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Instrumental Music)
+[00:15.00] Start the music...
+[00:20.00] Thalapathy kacheri
+[00:25.00] Let's start the kacheri
+[00:30.00] (Beats continuing...)
+[00:45.00] Dance to the rhythm
+[00:50.00] Feel the energy
+[01:05.00] (Instrumental drop)
+[01:20.00] Everybody on the floor
+[01:25.00] Thalapathy kacheri
+[01:30.00] Let's start the kacheri
+[01:45.00] (Heavy Bass)
+[02:10.00] Move to the beat
+[02:25.00] Thalapathy kacheri
+[02:40.00] (Outro Beats)`
+    },
+    {
+        title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=33", file: "https://files.catbox.moe/y0df1k.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro Beats)
+[00:12.00] Chikiri chikiri...
+[00:18.00] Ooh lala chikiri chikiri
+[00:24.00] Andamtho aadesuko
+[00:30.00] Vayasutho paadesuko
+[00:35.00] Chikiri chikiri...
+[00:40.00] (Instrumental...)
+[00:55.00] Kallatho chesey maaya
+[01:00.00] Gundello yedo gaayam
+[01:05.00] Naa pranam neekey sontham
+[01:10.00] Nuvve naa loka kantham
+[01:15.00] Chikiri chikiri...
+[01:20.00] Ooh lala chikiri chikiri
+[01:25.00] (Dance Interlude)
+[01:50.00] Vagalatho champesthave
+[01:55.00] Naa manasuni laagesthave
+[02:00.00] Nee navvula vaana lona
+[02:05.00] Nannu thadipesi odilesthave
+[02:10.00] Chikiri chikiri...
+[02:15.00] Ooh lala chikiri chikiri
+[02:20.00] (Outro Music)`
+    },
+    {
+        title: "Ninnu Chuse Anandamlo", artist: "Gang Leader", cover: "https://picsum.photos/200?random=36", file: "https://files.catbox.moe/t05z8d.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro)
+[00:10.00] Ninnu chuse anandamlo...
+[00:15.50] Kannu mooste andamlo...
+[00:20.00] Yegasi poyindhi naa manase...
+[00:25.00] Nee kosam vethiki vethiki
+[00:30.00] Alisipoyindhi naa pranam
+[00:35.00] Ninnu chuse anandamlo...
+[00:40.00] Kannu mooste andamlo...
+[00:45.00] (Instrumental Drop)
+[01:05.00] Vennela kante challanidhi
+[01:10.00] Nee navvu nannu thakindhi
+[01:15.00] Poola kante andamaina
+[01:20.00] Nee roopam naalo nindindhi
+[01:25.00] Ee janmaki nuvvu chaalu
+[01:30.00] Naa hrudayam neeve le
+[01:35.00] Ninnu chuse anandamlo...
+[01:40.00] Kannu mooste andamlo...
+[01:45.00] (Instrumental Interlude 2)
+[02:15.00] Kalalo kooda ninnu chusthu
+[02:20.00] Naa jeevitham gadipesta
+[02:25.00] Nee jathalo nenu untu
+[02:30.00] Ee lokam marchipotha
+[02:35.00] Naa pranam neeve le
+[02:40.00] Naa sarvam neeve le
+[02:45.00] Ninnu chuse anandamlo...
+[02:50.00] Kannu mooste andamlo...
+[02:55.00] (Outro)`
+    },
+    {
+        title: "Hoyna Hoyna", artist: "Gang Leader", cover: "https://picsum.photos/200?random=37", file: "https://files.catbox.moe/odv2p2.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro Beats)
+[00:14.00] Hoyna hoyna...
+[00:20.00] Neeto unte chaale
+[00:25.00] Pranam motham neeke...
+[00:30.00] Hoyna hoyna...
+[00:35.00] Naalo aasa neeve
+[00:40.00] Naa shwasa kooda neeve
+[00:45.00] (Music Interlude)
+[01:00.00] Puvvulanti ammayi
+[01:05.00] Navvutho nannu champake
+[01:10.00] Andamaina ammudu
+[01:15.00] Kallatho katti veyake
+[01:20.00] Nee prema naaku kavaley
+[01:25.00] Naa gunde neeke sonthame
+[01:30.00] Hoyna hoyna...
+[01:35.00] Neeto unte chaale
+[01:40.00] (Instrumental Interlude 2)
+[02:05.00] Mabbulanti nee kurulu
+[02:10.00] Gaaliki eguruthoonte
+[02:15.00] Vennelanti nee roopam
+[02:20.00] Nannu pilusthoonte
+[02:25.00] Naa vayasu aagademole
+[02:30.00] Nee thodu nenu kavaale
+[02:35.00] Hoyna hoyna...
+[02:40.00] Neeto unte chaale
+[02:45.00] (Outro)`
+    },
+    {
+        title: "Hello Rammante", artist: "Orange", cover: "https://picsum.photos/200?random=38", file: "https://files.catbox.moe/6ic1li.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Upbeat Intro)
+[00:12.50] Hello rammante vachesindha
+[00:17.50] Pillo nee midha naake prema
+[00:22.00] Ye maaya chesave o preyasi
+[00:27.00] Gundello nindave o urvasi
+[00:32.00] Hello rammante vachesindha
+[00:37.00] Pillo nee midha naake prema
+[00:42.00] (Instrumental Beats)
+[00:58.00] Navvutho nannu laagesave
+[01:03.00] Kallatho nannu katteseve
+[01:08.00] Naa manase theesukellave
+[01:13.00] Nannu nenu marchipoyane
+[01:18.00] Nee andam naaku pichhe kki
+[01:23.00] Naa pranam neeve aipoye
+[01:28.00] Hello rammante vachesindha
+[01:33.00] Pillo nee midha naake prema
+[01:38.00] (Instrumental Solo)
+[02:05.00] Malle poola vaasana nuvve
+[02:10.00] Vennela kanti roopam nuvve
+[02:15.00] Naa asalu anni neeve le
+[02:20.00] Ee jeevitham antha neeve le
+[02:25.00] Nuvvu leka nenu brathakalene
+[02:30.00] Nee thode naaku kavalene
+[02:35.00] Hello rammante vachesindha
+[02:40.00] Pillo nee midha naake prema
+[02:45.00] (Outro)`
+    },
+    {
+        title: "Ola Olaala Ala", artist: "Orange", cover: "https://picsum.photos/200?random=39", file: "https://files.catbox.moe/w7b93p.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro)
+[00:15.00] Ola olaala ala...
+[00:20.00] Nee roope chusthuntey ilaa...
+[00:25.00] Manasu yegirey mabbu laaga
+[00:30.00] Gaalilo theli aadanu ilaa
+[00:35.00] Ola olaala ala...
+[00:40.00] Nee roope chusthuntey ilaa...
+[00:45.00] (Instrumental Drop)
+[01:05.00] Kalalu kooda nijam laaga
+[01:10.00] Anipisthundi neetho unna vela
+[01:15.00] Lokam antha kotha gaaga
+[01:20.00] Kanipisthundi nee jathalona
+[01:25.00] Naa vayase udikinadi le
+[01:30.00] Nee premalo munigindi le
+[01:35.00] Ola olaala ala...
+[01:40.00] Nee roope chusthuntey ilaa...
+[01:45.00] (Instrumental Interlude)
+[02:15.00] Puvvullo andam antha
+[02:20.00] Nee navvulo daagunnadi
+[02:25.00] Vennello challadanam antha
+[02:30.00] Nee chuplo daagunnadi
+[02:35.00] Naa pranam neeve le
+[02:40.00] Naa sarvam neeve le
+[02:45.00] Ola olaala ala...
+[02:50.00] Nee roope chusthuntey ilaa...
+[02:55.00] (Outro)`
     },
 
     // --- Punjabi Songs ---
