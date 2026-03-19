@@ -36,19 +36,93 @@ const defaultSongs = [
     {title: "Bang Bang", artist: "Unknown", cover: "https://picsum.photos/200?random=64", file: "https://files.catbox.moe/c49jkx.mp3", language: "Hindi"},
     {title: "Khairiyat", artist: "Unknown", cover: "https://picsum.photos/200?random=65", file: "https://files.catbox.moe/ua2m9s.mp3", language: "Hindi"},
 
-    // --- Telugu / South Songs ---
-    {title: "Thalapathy Kacheri", artist: "Unknown", cover: "https://picsum.photos/200?random=26", file: "https://files.catbox.moe/l6shmk.mp3", language: "Telugu"},
-    {title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=33", file: "https://files.catbox.moe/y0df1k.mp3", language: "Telugu"},
-    {title: "Chiru Chiru", artist: "Unknown", cover: "https://picsum.photos/200?random=34", file: "https://files.catbox.moe/9geklv.mp3", language: "Telugu"},
-    {title: "Nee Yadalo", artist: "Unknown", cover: "https://picsum.photos/200?random=35", file: "https://files.catbox.moe/6dtk2w.mp3", language: "Telugu"},
-    {title: "Ninnu Chuse Anandamlo", artist: "Unknown", cover: "https://picsum.photos/200?random=36", file: "https://files.catbox.moe/t05z8d.mp3", language: "Telugu"},
-    {title: "Hoyna Hoyna", artist: "Unknown", cover: "https://picsum.photos/200?random=37", file: "https://files.catbox.moe/odv2p2.mp3", language: "Telugu"},
-    {title: "Hello Rammante", artist: "Unknown", cover: "https://picsum.photos/200?random=38", file: "https://files.catbox.moe/6ic1li.mp3", language: "Telugu"},
-    {title: "Ola Olaala Ala", artist: "Unknown", cover: "https://picsum.photos/200?random=39", file: "https://files.catbox.moe/w7b93p.mp3", language: "Telugu"},
-    {title: "Chilipiga", artist: "Unknown", cover: "https://picsum.photos/200?random=40", file: "https://files.catbox.moe/f8vhp1.mp3", language: "Telugu"},
-    {title: "Nenu Nuvvantu", artist: "Unknown", cover: "https://picsum.photos/200?random=41", file: "https://files.catbox.moe/gvglj1.mp3", language: "Telugu"},
-    {title: "Rooba Rooba", artist: "Unknown", cover: "https://picsum.photos/200?random=42", file: "https://files.catbox.moe/n86g5c.mp3", language: "Telugu"},
-    {title: "O Range", artist: "Unknown", cover: "https://picsum.photos/200?random=43", file: "https://files.catbox.moe/1v6ctl.mp3", language: "Telugu"},
+    // --- Telugu / South Songs (WITH LYRICS) ---
+    {
+        title: "Thalapathy Kacheri", artist: "Unknown", cover: "https://picsum.photos/200?random=26", file: "https://files.catbox.moe/l6shmk.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Instrumental Music)
+[00:15.00] Start the music...
+[00:20.00] Thalapathy kacheri...
+[00:25.00] (Beats continuing...)`
+    },
+    {
+        title: "Chikiri Chikiri", artist: "Unknown", cover: "https://picsum.photos/200?random=33", file: "https://files.catbox.moe/y0df1k.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro Beats)
+[00:12.00] Chikiri chikiri...
+[00:18.00] (Chorus starts)
+[00:24.00] (Instrumental...)`
+    },
+    {
+        title: "Chiru Chiru", artist: "Unknown", cover: "https://picsum.photos/200?random=34", file: "https://files.catbox.moe/9geklv.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Beautiful Intro)
+[00:14.50] Chiru chiru chiru chinukai kurisaave
+[00:19.50] Manasuna madi murise varamaave
+[00:24.80] Yegirey yegirey...
+[00:30.00] Naa pranam yegirey...`
+    },
+    {
+        title: "Nee Yadalo", artist: "Unknown", cover: "https://picsum.photos/200?random=35", file: "https://files.catbox.moe/6dtk2w.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Melody starts)
+[00:18.00] Nee yadalo naku chotu unda...
+[00:24.00] Naa hrudayam neeku sonthaminda...
+[00:30.00] (Music continues)`
+    },
+    {
+        title: "Ninnu Chuse Anandamlo", artist: "Unknown", cover: "https://picsum.photos/200?random=36", file: "https://files.catbox.moe/t05z8d.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro)
+[00:10.00] Ninnu chuse anandamlo...
+[00:15.50] Kannu mooste andamlo...
+[00:20.00] Yegasi poyindhi naa manase...`
+    },
+    {
+        title: "Hoyna Hoyna", artist: "Unknown", cover: "https://picsum.photos/200?random=37", file: "https://files.catbox.moe/odv2p2.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro Beats)
+[00:14.00] Hoyna hoyna...
+[00:20.00] Neeto unte chaale
+[00:25.00] Pranam motham neeke...`
+    },
+    {
+        title: "Hello Rammante", artist: "Unknown", cover: "https://picsum.photos/200?random=38", file: "https://files.catbox.moe/6ic1li.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Upbeat Intro)
+[00:12.50] Hello rammante vachesindha
+[00:17.50] Pillo nee midha naake prema
+[00:22.00] (Chorus starts...)`
+    },
+    {
+        title: "Ola Olaala Ala", artist: "Unknown", cover: "https://picsum.photos/200?random=39", file: "https://files.catbox.moe/w7b93p.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Intro)
+[00:15.00] Ola olaala ala...
+[00:20.00] Nee roope chusthuntey ilaa...
+[00:25.00] (Music...)`
+    },
+    {
+        title: "Chilipiga", artist: "Unknown", cover: "https://picsum.photos/200?random=40", file: "https://files.catbox.moe/f8vhp1.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Guitar Intro)
+[00:15.00] Chilipiga choosthavala
+[00:22.00] Ninukala choosedela
+[00:28.00] Naa manase emo aipoyela...`
+    },
+    {
+        title: "Nenu Nuvvantu", artist: "Unknown", cover: "https://picsum.photos/200?random=41", file: "https://files.catbox.moe/gvglj1.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Soft Music)
+[00:16.00] Nenu nuvvantu verai unna...
+[00:22.00] Naake ee velalo neevai unna...
+[00:28.00] Gundello yedo alajadi...`
+    },
+    {
+        title: "Rooba Rooba", artist: "Unknown", cover: "https://picsum.photos/200?random=42", file: "https://files.catbox.moe/n86g5c.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Fast Intro)
+[00:14.20] Rooba rooba rooba rooba
+[00:18.50] Hey rooba rooba rooba rooba
+[00:22.10] Andamaina mabbulona chandamama
+[00:27.30] Nuvve nuvve oh bhaama`
+    },
+    {
+        title: "O Range", artist: "Unknown", cover: "https://picsum.photos/200?random=43", file: "https://files.catbox.moe/1v6ctl.mp3", language: "Telugu",
+        lyrics: `[00:00.00] (Rock Intro)
+[00:12.00] O Range... preminchaane
+[00:18.00] Neekosam emaina chesthaane
+[00:24.00] (Chorus starts...)`
+    },
 
     // --- Punjabi Songs ---
     {title: "Boyfriend", artist: "Karan Aujla", cover: "https://picsum.photos/200?random=2", file: "https://files.catbox.moe/fcllvp.mp3", language: "Punjabi"},
@@ -58,13 +132,9 @@ const defaultSongs = [
     {title: "I Really Do", artist: "Unknown", cover: "https://picsum.photos/200?random=10", file: "https://files.catbox.moe/hs231u.mp3", language: "Punjabi"},
     {title: "For A Reason", artist: "Unknown", cover: "https://picsum.photos/200?random=11", file: "https://files.catbox.moe/eq7c5h.mp3", language: "Punjabi"},
 
-    // --- English Songs (WITH SYNCED LYRICS DEMO) ---
+    // --- English Songs ---
     {
-        title: "Shape of You", 
-        artist: "Ed Sheeran", 
-        cover: "https://picsum.photos/200?random=44", 
-        file: "https://files.catbox.moe/h6sxqt.mp3", 
-        language: "English",
+        title: "Shape of You", artist: "Ed Sheeran", cover: "https://picsum.photos/200?random=44", file: "https://files.catbox.moe/h6sxqt.mp3", language: "English",
         lyrics: `[00:00.00] (Instrumental Intro)
 [00:09.50] The club isn't the best place to find a lover
 [00:11.80] So the bar is where I go
