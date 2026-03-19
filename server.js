@@ -185,7 +185,7 @@ function renderLyrics() {
 function updateSyncedLyrics() {
     if (!isLyricsVisible || parsedLyrics.length === 0) return;
     
-    const currentTime = audio.currentTime - 1.2; 
+    const currentTime = audio.currentTime - 1.8; 
     let activeIndex = -1;
 
     for (let i = 0; i < parsedLyrics.length; i++) {
