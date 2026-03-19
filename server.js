@@ -1,4 +1,3 @@
-// --- LOAD THEME BEFORE ANYTHING ELSE ---
 let currentTheme = localStorage.getItem('sky_theme') || '#00f2fe';
 document.documentElement.style.setProperty('--accent', currentTheme);
 
@@ -14,8 +13,6 @@ const request = indexedDB.open("SkyMusicDB", 1);
 let downloadedURLs = JSON.parse(localStorage.getItem('downloadedURLs')) || [];
 let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
 let playlists = JSON.parse(localStorage.getItem('sky_playlists')) || [];
-
-// NEW: RECENTLY PLAYED ARRAY
 let recentHistory = JSON.parse(localStorage.getItem('sky_recent')) || [];
 
 request.onupgradeneeded = (e) => {
@@ -64,7 +61,7 @@ if (typeof defaultSongs !== 'undefined') {
             existing.title = ds.title;
             existing.artist = ds.artist;
             existing.cover = ds.cover;
-            existing.lyrics = ds.lyrics; // Sync lyrics from songs.js too!
+            existing.lyrics = ds.lyrics; 
         }
     });
 }
@@ -89,14 +86,11 @@ let searchScreenIndices = [];
 let currentSearchFilter = 'All';
 
 // ========================================================
-// AUDIO VISUALIZER & EQUALIZER (Web Audio API)
+// AUDIO EQUALIZER (Web Audio API)
 // ========================================================
 let audioCtx;
 let sourceNode;
 let lowFilter, midFilter, highFilter;
-let analyser;
-let canvasCtx;
-let visualizerAnimation;
 
 function initAudioEQ() {
     if (audioCtx) return; 
@@ -104,57 +98,16 @@ function initAudioEQ() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     sourceNode = audioCtx.createMediaElementSource(audio);
     
-    // EQ Nodes
     lowFilter = audioCtx.createBiquadFilter(); lowFilter.type = "lowshelf"; lowFilter.frequency.value = 250; 
     midFilter = audioCtx.createBiquadFilter(); midFilter.type = "peaking"; midFilter.frequency.value = 1000; midFilter.Q.value = 1;
     highFilter = audioCtx.createBiquadFilter(); highFilter.type = "highshelf"; highFilter.frequency.value = 4000;
 
-    // Visualizer Node
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 128; // Determines number of bars
-
     sourceNode.connect(lowFilter);
     lowFilter.connect(midFilter);
     midFilter.connect(highFilter);
-    highFilter.connect(analyser); // Connect to visualizer
-    analyser.connect(audioCtx.destination); // Connect to speakers
+    highFilter.connect(audioCtx.destination); 
     
     updateEQ(); 
-
-    // Setup Canvas
-    const canvas = document.getElementById("visualizer");
-    canvasCtx = canvas.getContext("2d");
-    drawVisualizer();
-}
-
-function drawVisualizer() {
-    visualizerAnimation = requestAnimationFrame(drawVisualizer);
-    
-    if (!analyser || audio.paused) return; // Save CPU when paused
-
-    const canvas = document.getElementById("visualizer");
-    canvas.width = window.innerWidth;
-    canvas.height = 300;
-
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyser.getByteFrequencyData(dataArray);
-
-    canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const barWidth = (canvas.width / bufferLength) * 2.5;
-    let barHeight;
-    let x = 0;
-
-    for(let i = 0; i < bufferLength; i++) {
-        barHeight = dataArray[i];
-
-        // Draw with current Accent Color
-        canvasCtx.fillStyle = currentTheme;
-        canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-        x += barWidth + 2;
-    }
 }
 
 function updateEQ() {
@@ -228,10 +181,11 @@ function renderLyrics() {
     });
 }
 
+// FIXED: Added 0.6 second delay to audio.currentTime to prevent lyrics jumping ahead early
 function updateSyncedLyrics() {
     if (!isLyricsVisible || parsedLyrics.length === 0) return;
     
-    const currentTime = audio.currentTime;
+    const currentTime = audio.currentTime - 0.6; 
     let activeIndex = -1;
 
     for (let i = 0; i < parsedLyrics.length; i++) {
@@ -248,7 +202,6 @@ function updateSyncedLyrics() {
         if (activeEl && !activeEl.classList.contains("active-lyric")) {
             activeEl.classList.add("active-lyric");
             
-            // Auto-scroll logic
             const overlay = document.getElementById("lyricsOverlay");
             overlay.scrollTo({
                 top: activeEl.offsetTop - (overlay.clientHeight / 2) + 20,
@@ -301,7 +254,7 @@ function buildQueue(context) {
     currentPlaybackQueue = [];
     if (context === 'home') {
         currentPlaybackQueue = [...homeScreenIndices];
-    } else if (context === 'recent') { // Support queueing from Recent tab
+    } else if (context === 'recent') { 
         currentPlaybackQueue = [...recentHistory];
     } else if (context === 'liked') {
         likedSongs.forEach(ls => {
@@ -335,7 +288,6 @@ function refreshAllGrids() {
 }
 
 function loadSongs() {
-    // 1. Render Recommendations
     const recGrid = document.getElementById("songGrid");
     if (recGrid) {
         recGrid.innerHTML = "";
@@ -361,7 +313,6 @@ function loadSongs() {
         });
     }
 
-    // 2. Render Recently Played
     const recentSection = document.getElementById("recentSection");
     const recentGrid = document.getElementById("recentGrid");
     
@@ -683,20 +634,17 @@ async function playSong(index, context = null) {
     currentSong = index;
     const song = songs[index];
 
-    // UPDATE RECENT HISTORY
     recentHistory = recentHistory.filter(i => i !== index);
     recentHistory.unshift(index);
     if (recentHistory.length > 10) recentHistory.pop();
     localStorage.setItem('sky_recent', JSON.stringify(recentHistory));
 
-    // UI Updates
     refreshAllGrids(); 
     document.getElementById("player").style.display = "flex";
     document.getElementById("playerCover").src = song.cover;
     document.getElementById("playerTitle").innerText = "Loading...";
     document.getElementById("playerArtist").innerText = "";
     
-    // Parse Lyrics if available
     if (song.lyrics) {
         parseLRC(song.lyrics);
         document.getElementById("lyricsBtn").style.display = "flex";
@@ -1093,7 +1041,7 @@ audio.addEventListener('timeupdate', () => {
         bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
         document.getElementById("currentTime").innerText = formatTime(audio.currentTime);
     }
-    updateSyncedLyrics(); // NEW: Trigger lyrics update
+    updateSyncedLyrics(); 
 });
 
 audio.addEventListener('ended', nextSong);
@@ -1101,12 +1049,6 @@ audio.addEventListener('ended', nextSong);
 audio.addEventListener('play', () => {
     const icon = document.getElementById("playPauseIcon");
     if (icon) icon.src = "https://files.catbox.moe/uklwfc.jpg"; 
-    
-    // NEW: Ensure visualizer resumes
-    if (audioCtx && audioCtx.state === 'running') {
-        cancelAnimationFrame(visualizerAnimation);
-        drawVisualizer();
-    }
 });
 
 audio.addEventListener('pause', () => {
@@ -1150,7 +1092,7 @@ function exportBackup() {
         liked: JSON.parse(localStorage.getItem('likedSongs')) || [],
         downloads: JSON.parse(localStorage.getItem('downloadedURLs')) || [],
         playlists: JSON.parse(localStorage.getItem('sky_playlists')) || [],
-        recent: JSON.parse(localStorage.getItem('sky_recent')) || [] // Backup recent history
+        recent: JSON.parse(localStorage.getItem('sky_recent')) || []
     };
     
     const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
