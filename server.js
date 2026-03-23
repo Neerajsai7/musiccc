@@ -130,27 +130,9 @@ function updateEQ() {
 });
 
 // ========================================================
-// SYNCED LYRICS PARSER
+// STATIC LYRICS 
 // ========================================================
-let parsedLyrics = [];
 let isLyricsVisible = false;
-
-function parseLRC(lrcText) {
-    parsedLyrics = [];
-    const lines = lrcText.split('\n');
-    const timeRegex = /\[(\d{2}):(\d{2}\.\d{2})\]/;
-
-    lines.forEach(line => {
-        const match = timeRegex.exec(line);
-        if (match) {
-            const minutes = parseInt(match[1]);
-            const seconds = parseFloat(match[2]);
-            const time = minutes * 60 + seconds;
-            const text = line.replace(timeRegex, '').trim();
-            if (text) parsedLyrics.push({ time, text });
-        }
-    });
-}
 
 function toggleLyrics() {
     isLyricsVisible = !isLyricsVisible;
@@ -169,46 +151,15 @@ function toggleLyrics() {
 
 function renderLyrics() {
     const overlay = document.getElementById("lyricsOverlay");
-    overlay.innerHTML = "";
+    const currentSongData = songs[currentSong];
     
-    if (parsedLyrics.length === 0) {
-        overlay.innerHTML = `<p style="color:gray; margin-top:150px;">No synced lyrics found for this track.</p>`;
+    if (!currentSongData || !currentSongData.lyrics || currentSongData.lyrics.trim() === "") {
+        overlay.innerHTML = `<p style="color:gray; margin-top:150px;">No lyrics available for this track. Right-click and 'Edit Info' to add them!</p>`;
         return;
     }
 
-    parsedLyrics.forEach((line, i) => {
-        overlay.innerHTML += `<div class="lyric-line" id="lyric-${i}">${line.text}</div>`;
-    });
-}
-
-// FIXED: Increased delay to 1.2 seconds for perfect lyric syncing!
-function updateSyncedLyrics() {
-    if (!isLyricsVisible || parsedLyrics.length === 0) return;
-    
-    const currentTime = audio.currentTime - 1.8; 
-    let activeIndex = -1;
-
-    for (let i = 0; i < parsedLyrics.length; i++) {
-        if (currentTime >= parsedLyrics[i].time) {
-            activeIndex = i;
-        } else {
-            break;
-        }
-    }
-
-    if (activeIndex !== -1) {
-        document.querySelectorAll(".lyric-line").forEach(el => el.classList.remove("active-lyric"));
-        const activeEl = document.getElementById(`lyric-${activeIndex}`);
-        if (activeEl && !activeEl.classList.contains("active-lyric")) {
-            activeEl.classList.add("active-lyric");
-            
-            const overlay = document.getElementById("lyricsOverlay");
-            overlay.scrollTo({
-                top: activeEl.offsetTop - (overlay.clientHeight / 2) + 20,
-                behavior: 'smooth'
-            });
-        }
-    }
+    // Display the lyrics exactly as written, preserving line breaks
+    overlay.innerHTML = `<div style="color: #e2e8f0; font-size: 16px; line-height: 1.8; white-space: pre-wrap; padding-bottom: 20px;">${currentSongData.lyrics}</div>`;
 }
 
 // ========================================================
@@ -645,17 +596,9 @@ async function playSong(index, context = null) {
     document.getElementById("playerTitle").innerText = "Loading...";
     document.getElementById("playerArtist").innerText = "";
     
-    if (song.lyrics) {
-        parseLRC(song.lyrics);
-        document.getElementById("lyricsBtn").style.display = "flex";
-        if (isLyricsVisible) renderLyrics();
-    } else {
-        parsedLyrics = [];
-        document.getElementById("lyricsBtn").style.display = "none";
-        document.getElementById("lyricsOverlay").style.display = "none";
-        isLyricsVisible = false;
-        document.getElementById("lyricsBtn").classList.remove("lyrics-active");
-    }
+    // Always show the lyrics button now!
+    document.getElementById("lyricsBtn").style.display = "flex";
+    if (isLyricsVisible) renderLyrics();
     
     const blob = await getOfflineSong(song.file);
     if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
@@ -898,6 +841,10 @@ function handleCmEdit() {
     document.getElementById("editTitleInput").value = s.title;
     document.getElementById("editArtistInput").value = s.artist;
     document.getElementById("editCoverInput").value = s.cover;
+    
+    // NEW: Load the existing lyrics into the text box
+    document.getElementById("editLyricsInput").value = s.lyrics || "";
+    
     document.getElementById("editModal").style.display = "flex";
 }
 
@@ -930,8 +877,18 @@ function saveEditedSong() {
     songs[activeContextIndex].title = document.getElementById("editTitleInput").value;
     songs[activeContextIndex].artist = document.getElementById("editArtistInput").value;
     songs[activeContextIndex].cover = document.getElementById("editCoverInput").value;
+    
+    // NEW: Save the new plain text lyrics
+    songs[activeContextIndex].lyrics = document.getElementById("editLyricsInput").value;
+    
     localStorage.setItem('sky_songs_v4', JSON.stringify(songs));
     refreshAllGrids();
+    
+    // Auto-refresh lyrics on screen if the edited song is currently playing
+    if (activeContextIndex === currentSong && isLyricsVisible) {
+        renderLyrics();
+    }
+    
     closeEditModal();
 }
 
@@ -942,6 +899,10 @@ function addSong() {
     const cover = document.getElementById("coverURL").value || "https://picsum.photos/200";
     const url = document.getElementById("songURL").value;
     const lang = document.getElementById("songLanguage").value || "Other";
+    
+    // NEW: Capture custom lyrics when adding a song
+    const lyrics = document.getElementById("songLyrics").value || "";
+    
     const fileInput = document.getElementById("localAudio").files[0];
 
     if (!name) return customAlert("Please enter a song name.");
@@ -952,7 +913,7 @@ function addSong() {
         saveSongOffline(finalFile, fileInput);
     }
 
-    songs.push({ title: name, artist: artist, cover: cover, file: finalFile, language: lang });
+    songs.push({ title: name, artist: artist, cover: cover, file: finalFile, language: lang, lyrics: lyrics });
     localStorage.setItem('sky_songs_v4', JSON.stringify(songs));
     
     document.getElementById("songName").value = "";
@@ -960,6 +921,7 @@ function addSong() {
     document.getElementById("coverURL").value = "";
     document.getElementById("songURL").value = "";
     document.getElementById("songLanguage").value = "";
+    document.getElementById("songLyrics").value = "";
     document.getElementById("localAudio").value = "";
     
     refreshAllGrids();
@@ -1041,7 +1003,6 @@ audio.addEventListener('timeupdate', () => {
         bar.style.width = (audio.currentTime / audio.duration) * 100 + "%";
         document.getElementById("currentTime").innerText = formatTime(audio.currentTime);
     }
-    updateSyncedLyrics(); 
 });
 
 audio.addEventListener('ended', nextSong);
