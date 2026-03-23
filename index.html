@@ -197,7 +197,7 @@ body {
 .player.fullscreen #playerTitle { font-size: 28px; margin-bottom: 10px; }
 .player.fullscreen #playerArtist { font-size: 18px; margin-bottom: 20px; color: #a0aec0; }
 
-/* Lyrics Overlay */
+/* Lyrics Overlay (Simplified for Plain Text) */
 #lyricsOverlay {
     display: none;
     position: absolute;
@@ -216,25 +216,9 @@ body {
     padding: 20px;
     text-align: center;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    scroll-behavior: smooth;
 }
 
 #lyricsOverlay::-webkit-scrollbar { display: none; }
-
-.lyric-line {
-    color: #a0aec0;
-    font-size: 18px;
-    margin: 15px 0;
-    transition: 0.3s ease;
-    font-weight: bold;
-}
-
-.lyric-line.active-lyric {
-    color: var(--accent);
-    font-size: 24px;
-    text-shadow: 0 0 15px var(--accent);
-    transform: scale(1.05);
-}
 
 #closePlayerBtn {
     position: absolute;
@@ -362,7 +346,6 @@ button:hover {
 .category-filters::-webkit-scrollbar { height: 4px; }
 .category-filters::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
 
-/* FIXED PLAYER CONTROLS ALIGNMENT */
 .player-controls { 
     display: flex; 
     gap: 8px; 
@@ -398,7 +381,7 @@ button:hover {
     filter: drop-shadow(0 0 8px var(--accent));
 }
 
-.addForm input, .modal-content input, .playlist-input {
+.addForm input, .addForm textarea, .modal-content input, .modal-content textarea, .playlist-input {
     display:block;
     margin-bottom:10px;
     padding:10px;
@@ -583,6 +566,8 @@ button:hover {
                 <input id="coverURL" placeholder="Cover Image URL">
                 <input id="songLanguage" placeholder="Language / Genre (Optional)">
                 
+                <textarea id="songLyrics" placeholder="Paste lyrics here... (Optional)" style="height: 80px; resize: vertical;"></textarea>
+                
                 <p style="color:white; font-size:13px; margin-bottom:8px;">Option 1: Internet MP3 URL</p>
                 <input id="songURL" placeholder="https://...">
                 <p style="color:white; font-size:14px; margin: 15px 0 10px 0; font-weight:bold;">OR</p>
@@ -672,7 +657,9 @@ button:hover {
             </button>
             
             <button class="hide-on-mobile" id="shuffleBtn" onclick="toggleShuffle()" style="font-size: 18px; color: white;">🔀</button>
+            
             <button class="hide-on-mobile" id="lyricsBtn" onclick="toggleLyrics()" style="font-size: 18px; color: white;">🎤</button>
+            
             <button class="hide-on-mobile" id="loopBtn" onclick="toggleLoop()">
                 <img src="https://files.catbox.moe/rmtk4t.jpg" style="width: 22px; height: 22px; border-radius: 4px;" alt="Loop">
             </button>
@@ -717,6 +704,9 @@ button:hover {
         <input id="editTitleInput" type="text" placeholder="Song Title">
         <input id="editArtistInput" type="text" placeholder="Artist Name">
         <input id="editCoverInput" type="text" placeholder="Cover URL">
+        
+        <textarea id="editLyricsInput" placeholder="Paste full lyrics here..." style="height: 120px; resize: vertical;"></textarea>
+
         <div style="display:flex; justify-content:space-between; margin-top: 20px;">
             <button onclick="saveEditedSong()">Save</button>
             <button onclick="closeEditModal()" style="background: rgba(255,255,255,0.1);">Cancel</button>
